@@ -9,7 +9,8 @@ const HEADERS = ['الوقت', 'الحدث', 'اسم العميل', 'الجوا�
 
 function sheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName(SHEET_NAME);
+  let sh = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
+  if (sh.getLastRow() === 0) sh.appendRow(HEADERS);
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
     sh.appendRow(HEADERS);
