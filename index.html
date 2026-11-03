@@ -1456,10 +1456,10 @@ function buildPages(){
   cart.forEach((it,i)=>{
     out.push(`<div class="prodp"><div class="prodimg"><img alt="${esc(it.name)}" src="${it.photo||it.thumb}"></div>
     <div class="prodcap"><div><span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div>${it.tile?`<div class="tsize">${tSizeFull(it.tile)}${it.tile.cat?` · ${it.tile.cat}`:""}</div>`:""}</div>
-    <div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div></div></div>`);
+    ${window._catMode?"":`<div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div>`}</div></div>`);
     const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
   (window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
-  out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
+  if(!window._catMode)out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
    <div style="overflow-x:auto"><table><tr><th>المنتج</th><th>المنطقة</th><th>الكمية</th></tr>
    ${cart.map(it=>`<tr><td dir="ltr" style="text-align:right">${esc(it.name)}<br><small style="color:#6b6457">${it.code}${it.tile?` · ${+it.tile.w}×${+it.tile.h} cm · ${it.tile.t} cm`:""}</small></td><td>${it.zone}</td><td>${itemLine(it)}</td></tr>`).join("")}
    </table></div>
@@ -1495,25 +1495,112 @@ async function savePdf(pdf,filename){const blob=pdf.output("blob");
   try{pdf.save(filename);return true}catch(e){}
   try{const u=URL.createObjectURL(blob);const w=window.open(u,"_blank");if(w)return true;location.href=u;return true}catch(e){}
   throw new Error("save")}
-pdfBtn.onclick=async()=>{
-  if(!window.jspdf||!window.html2canvas){say("جاري تحميل أداة الـ PDF، حاول بعد ثواني");return}pdfBtn.disabled=true;const label=pdfBtn.textContent;pdfBtn.textContent="جاري تجهيز الملف…";
+async function renderPagesPdf(){
   const stage=document.createElement("div");stage.id="exportStage";document.body.appendChild(stage);
-  try{
-    const pdf=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+  try{const pdf=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
     for(let i=0;i<pages.length;i++){
       const el=document.createElement("div");el.className="page export"+(pages[i].startsWith('<div class="body"')||(pages[i].startsWith('<div class="sheetp"')||pages[i].startsWith('<div class="prodp"'))?" full":"");el.innerHTML=wrapPage(pages[i]);
-      stage.innerHTML="";stage.appendChild(el);
-      await resolveImgs(el);
-      if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+      stage.innerHTML="";stage.appendChild(el);await resolveImgs(el);if(document.fonts&&document.fonts.ready)await document.fonts.ready;
       const cv=await window.html2canvas(el,{scale:2,backgroundColor:"#fbfaf7",logging:false});
-      if(i)pdf.addPage();pdf.addImage(cv.toDataURL("image/jpeg",.9),"JPEG",0,0,210,297);
-    }
-    const ok=await savePdf(pdf,`كتالوج-${(CUSTOMER?.name||"اختياراتي").replace(/[\\/:*?"<>|]/g,"")}-الخزف-السعودي.pdf`);if(!ok)return;
-    say("تم حفظ الكتالوج PDF");track("تصدير PDF");
-    {const l=waLink();const box=document.getElementById("waAfter");if(l&&box){box.querySelector("a").href=l;box.hidden=false}}
-  }catch(e){if(!(e&&e.code==="declined"))say(e&&e.code==="unavailable"?"الحفظ غير متاح هنا":"ما قدرنا نجهز الملف، حاول مرة ثانية")}
-  finally{stage.remove();pdfBtn.disabled=false;pdfBtn.textContent=label}
-};
+      if(i)pdf.addPage();pdf.addImage(cv.toDataURL("image/jpeg",.9),"JPEG",0,0,210,297)}
+    return pdf}finally{stage.remove()}}
+/* company documents served next to the page (docs/), merged after the catalog with pdf-lib */
+const FIN=["docs/financials_2025.pdf","docs/financials_2024.pdf","docs/financials_2023.pdf"];
+const DOCS={pq:{ar:"docs/prequalification_ar.pdf",en:"docs/prequalification_en.pdf"},profile:{ar:"docs/profile_ar.pdf",en:"docs/profile_en.pdf"}};
+let pdfLibP=null;const loadPdfLib=()=>pdfLibP||(pdfLibP=new Promise((ok,no)=>{if(window.PDFLib)return ok(window.PDFLib);const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";sc.onload=()=>ok(window.PDFLib);sc.onerror=no;document.head.appendChild(sc)}));
+async function mergePdfs(parts){const L=await loadPdfLib(),out=await L.PDFDocument.create();
+  for(const bytes of parts){const d=await L.PDFDocument.load(bytes,{ignoreEncryption:true});(await out.copyPages(d,d.getPageIndices())).forEach(pg=>out.addPage(pg))}
+  return new Blob([await out.save()],{type:"application/pdf"})}
+async function saveBlob(blob,filename){
+  if(dl){try{await dl.save({filename,data:blob});return true}catch(e){if(e&&e.code==="declined")return false}}
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);return true}
+const fname=t=>`${t}-${(CUSTOMER?.name||"الخزف-السعودي").replace(/[\\/:*?"<>|]/g,"")}.pdf`;
+async function exportPdf(mode,lang){ /* mode: ms | ms+pq | profile */
+  if(mode!=="profile"&&(!window.jspdf||!window.html2canvas)){say("جاري تحميل أداة الـ PDF، حاول بعد ثواني");return false}
+  say(mode==="ms"?"جاري تجهيز الملف…":"جاري تجهيز الملف، قد ياخذ دقيقة…");
+  try{let blob,name;
+    if(mode==="profile"){blob=await (await fetch(DOCS.profile[lang])).blob();name=lang==="ar"?"الملف-التعريفي-الخزف-السعودي.pdf":"Saudi-Ceramics-Company-Profile.pdf"}
+    else{const pdf=await renderPagesPdf(),title=window._catMode?"كتالوج":"Material-Submittal";
+      if(mode==="ms"){blob=pdf.output("blob");name=fname(title)}
+      else{const parts=[pdf.output("arraybuffer"),await (await fetch(DOCS.pq[lang])).arrayBuffer()];if(document.getElementById("xFinCk").checked)for(const f of FIN)parts.push(await (await fetch(f)).arrayBuffer());blob=await mergePdfs(parts);name=fname(title+"-PreQualification")}}
+    const ok=await saveBlob(blob,name);if(!ok)return false;
+    say("تم حفظ الملف PDF");track(mode==="profile"?"تحميل الملف التعريفي":mode==="ms"?"تصدير PDF":"تصدير PDF + Pre-Qualification");
+    if(!window._catMode&&mode!=="profile"){const l=waLink();const box=document.getElementById("waAfter");if(l&&box){box.querySelector("a").href=l;box.hidden=false}}
+    return true}catch(e){if(!(e&&e.code==="declined"))say("ما قدرنا نجهز الملف، حاول مرة ثانية");return false}}
+/* export choices */
+const xd=document.createElement("div");xd.id="exportDlg";xd.hidden=true;xd.setAttribute("role","dialog");xd.setAttribute("aria-label","خيارات التصدير");
+xd.innerHTML=`<div class="xbox"><div class="xhead"><h3>تصدير الملف</h3><button class="x" type="button" id="xClose" aria-label="إغلاق">×</button></div>
+ <label class="xopt"><input type="radio" name="xm" value="ms" checked><span><b>Material Submittal</b><small>صور المنتجات + الداتا شيت + الكميات</small></span></label>
+ <label class="xopt"><input type="radio" name="xm" value="ms+pq"><span><b>Material Submittal + Pre-Qualification</b><small>الكتالوج ومعه ملف التأهيل المسبق (الملف التعريفي، السجلات، الشهادات، الاعتمادات، المشاريع)</small></span></label>
+ <label class="xopt"><input type="radio" name="xm" value="profile"><span><b>الملف التعريفي للشركة فقط</b><small>Company Profile</small></span></label>
+ <div class="xlang" id="xLang" hidden><span>لغة ملف الشركة</span><div class="chips"><button type="button" data-l="ar" aria-pressed="true">عربي</button><button type="button" data-l="en" aria-pressed="false">English</button></div></div>
+ <label class="xopt" id="xFin" hidden><input type="checkbox" id="xFinCk"><span><b>إرفاق القوائم المالية</b><small>التقارير السنوية 2025 · 2024 · 2023 (تكبّر حجم الملف)</small></span></label>
+ <button class="btn" type="button" id="xGo">تصدير</button></div>`;
+document.body.appendChild(xd);
+{const css=document.createElement("style");css.textContent=`#exportDlg{position:fixed;inset:0;z-index:80;background:rgba(10,12,16,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+#exportDlg[hidden]{display:none}#exportDlg .xbox{background:var(--solid);color:var(--fg);border-radius:12px;padding:18px;width:min(460px,100%);display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow:auto}
+#exportDlg .xhead{display:flex;align-items:center;justify-content:space-between}#exportDlg h3{margin:0;font:600 18px var(--display)}
+.xopt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px;cursor:pointer}.xopt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.xopt b{display:block;font-size:14px}.xopt small{color:var(--muted);font-size:12px;line-height:1.5}.xlang{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}`;document.head.appendChild(css)}
+let xLang="ar",xCtx=null;
+const xSync=()=>{const m=xd.querySelector('input[name=xm]:checked').value;document.getElementById("xLang").hidden=m==="ms";document.getElementById("xFin").hidden=m!=="ms+pq"};
+xd.querySelectorAll('input[name=xm]').forEach(r=>r.onchange=xSync);
+xd.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{xLang=b.dataset.l;xd.querySelectorAll('[data-l]').forEach(c=>c.setAttribute("aria-pressed",String(c===b)))});
+document.getElementById("xClose").onclick=()=>{xd.hidden=true;if(xCtx&&xCtx.cancel)xCtx.cancel()};
+function openExport(ctx){xCtx=ctx||null;xSync();xd.hidden=false}
+document.getElementById("xGo").onclick=async()=>{const m=xd.querySelector('input[name=xm]:checked').value,b=document.getElementById("xGo");b.disabled=true;b.textContent="جاري التجهيز…";
+  try{if(xCtx&&xCtx.run)await xCtx.run(m,xLang);else await exportPdf(m,xLang)}finally{b.disabled=false;b.textContent="تصدير";xd.hidden=true;xCtx=null}};
+pdfBtn.onclick=()=>openExport();
+/* ---------- "تصدير كتالوج": pick products by type/size/category (no house, no quantities) and export a catalog ---------- */
+{
+const PCATS=[["cer","بلاط سيراميك"],["por","بلاط بورسلان"],["fac","بلاط واجهات"],["stairs","بلاط الدرج"],["vanity","مغاسل بدولاب"],["basin","مغاسل"],["toilet","كراسي"],["bathing","بانيو وأحواض قدم"],["mixer","خلاطات مغسلة"],["shower","الدش وخلاطاته"],["shattaf","شطافات"],["mirror","مرايا"],["fitting","محابس وسيفونات"],["acc","إكسسوارات"],["drain","صفايات"],["kitchen","المطبخ"],["profile","بروفايلات"],["tile","لواصق وروبة"],["heater","سخانات"]];
+const pk=document.createElement("div");pk.id="pickCat";pk.hidden=true;pk.setAttribute("role","dialog");pk.setAttribute("aria-label","تصدير كتالوج");
+pk.innerHTML=`<div class="pbox"><div class="xhead"><h3>تصدير كتالوج</h3><button class="x" type="button" id="pkClose" aria-label="إغلاق">×</button></div>
+<p class="fine">اختر نوع المنتجات، وحدّد التصاميم اللي تبيها، ثم صدّر الكتالوج.</p>
+<div class="chips" id="pkCats"></div><div id="pkFilt"></div><div class="pkbar"><button type="button" class="btn ghost" id="pkAll">تحديد الكل</button><span id="pkCount" class="fine"></span></div>
+<div class="prods tgrid" id="pkGrid"></div><div class="pkfoot"><span id="pkSel" class="fine"></span><button class="btn" type="button" id="pkGo">صدّر الكتالوج</button></div></div>`;
+document.body.appendChild(pk);
+{const css=document.createElement("style");css.textContent=`#pickCat{position:fixed;inset:0;z-index:75;background:rgba(10,12,16,.55);display:flex;align-items:center;justify-content:center;padding:12px}#pickCat[hidden]{display:none}
+#pickCat .pbox{background:var(--solid);color:var(--fg);border-radius:12px;padding:16px;width:min(920px,100%);height:min(92vh,900px);display:flex;flex-direction:column;gap:8px}
+#pickCat .xhead{display:flex;justify-content:space-between;align-items:center}#pickCat h3{margin:0;font:600 18px var(--display)}
+#pkCats{display:flex;flex-wrap:wrap;gap:6px}#pkGrid{flex:1;overflow:auto;align-content:start;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+#pkGrid button[aria-pressed=true]{outline:3px solid var(--accent);outline-offset:-3px}#pkGrid .ck{position:absolute;bottom:26px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:13px}
+#pkGrid button[aria-pressed=true] .ck{display:flex}.pkbar,.pkfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}#pkGrid img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff}`;document.head.appendChild(css)}
+let cat="cer",size=null,th=null;const sel=new Map();
+const tileImg=t=>t.thumb||(t._p&&t._p.thumb)||"";
+function items(){
+  if(cat==="cer"||cat==="por"||cat==="fac")return TILES.filter(t=>t.src===cat).map(t=>({key:t.code,name:t.name.replace(/^Ceramic (Wall|Floor) Tile /,""),img:tileImg(t),size:`${+t.w}×${+t.h}`,th:t.t,make:()=>({code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:"كتالوج",qty:0,unit:"",spec:tileSpec(t)})}));
+  if(cat==="stairs")return STAIRS.map(s=>({key:s.tread,name:s.name,img:s.treads[0],size:"32×120",make:()=>({code:s.tread+" · "+s.riser,name:s.name+" · Stair Tread 32×120 + Riser 15×120",color:"",thumb:s.treads[0],photo:s.photo,_sheet:s.sheet,zone:"كتالوج",qty:0,unit:""})}));
+  if(cat==="bathing")return BATHING.flatMap(m=>m.variants.map(v=>({key:v.code,name:v.name,img:m.img,make:()=>({code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,zone:"كتالوج",qty:0,unit:"",spec:[["المقاس",v.label]].concat(m.spec)})})));
+  return CAT.filter(c=>c.cat===cat).map(p=>({key:p.code,name:p.name,img:p.img,make:()=>catItem(p,0,"كتالوج")}))}
+function render(){
+  document.getElementById("pkCats").innerHTML=PCATS.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===cat}">${l}</button>`).join("");
+  document.querySelectorAll("#pkCats button").forEach(b=>b.onclick=()=>{cat=b.dataset.k;size=null;th=null;render()});
+  let L=items();const isT=["cer","por","fac"].includes(cat),f=document.getElementById("pkFilt");
+  if(isT){const sizes=[...new Set(L.map(i=>i.size))].sort((a,b)=>eval(a.replace("×","*"))-eval(b.replace("×","*")));
+    const ths=[...new Set(L.filter(i=>!size||i.size===size).map(i=>i.th))].sort();
+    f.innerHTML=`<div class="tfilt"><span>المقاس (سم)</span><div class="chips">${["الكل",...sizes].map(v=>`<button type="button" data-s="${v}" aria-pressed="${(size||"الكل")===v}">${v}</button>`).join("")}</div></div>
+    <div class="tfilt"><span>السماكة</span><div class="chips">${["الكل",...ths].map(v=>`<button type="button" data-t="${v}" aria-pressed="${(th||"الكل")===v}">${v==="الكل"?v:v+" سم"}</button>`).join("")}</div></div>`;
+    f.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{size=b.dataset.s==="الكل"?null:b.dataset.s;th=null;render()});
+    f.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{th=b.dataset.t==="الكل"?null:b.dataset.t;render()});
+    L=L.filter(i=>(!size||i.size===size)&&(!th||i.th===th))}else f.innerHTML="";
+  const g=document.getElementById("pkGrid");g.innerHTML=L.map((i,n)=>`<button type="button" data-n="${n}" aria-pressed="${sel.has(i.key)}" title="${esc(i.name)}"><img alt="" src="${i.img}">${i.size?`<em class="tsz" dir="ltr">${i.size}</em>`:""}<i class="ck">✓</i><span>${esc(i.name)}</span></button>`).join("");
+  g.querySelectorAll("button").forEach(b=>b.onclick=()=>{const i=L[+b.dataset.n];if(sel.has(i.key))sel.delete(i.key);else sel.set(i.key,i);b.setAttribute("aria-pressed",String(sel.has(i.key)));count()});
+  document.getElementById("pkAll").onclick=()=>{const all=L.every(i=>sel.has(i.key));L.forEach(i=>all?sel.delete(i.key):sel.set(i.key,i));render()};
+  document.getElementById("pkCount").textContent=`${L.length} منتج`;count()}
+function count(){document.getElementById("pkSel").textContent=sel.size?`محدد ${sel.size} منتج`:"ما حددت منتجات";document.getElementById("pkGo").disabled=!sel.size}
+document.getElementById("pkClose").onclick=()=>pk.hidden=true;
+document.getElementById("pkGo").onclick=()=>{if(!sel.size)return;
+  openExport({run:async(mode,lang)=>{
+    if(mode==="profile")return exportPdf(mode,lang);
+    const saved=cart.splice(0,cart.length),list=[...sel.values()].map(i=>i.make());cart.push(...list);window._catMode=true;
+    try{await Promise.all(cart.filter(i=>i.tile).map(async i=>{const r=await pageImg(i.tile);i.photo=r.photo||i.photo;i._sheet=r.sheet;i._ds=await officialDS(i.tile)}));
+      window._guide=null;pages=buildPages();await exportPdf(mode,lang)}
+    finally{cart.splice(0,cart.length,...saved);window._catMode=false;try{renderCart()}catch(e){}}}})};
+window.openPicker=()=>{pk.hidden=false;render()};
+{const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="pickBtn";b.textContent="📄 تصدير كتالوج";b.style.cssText="right:auto;left:12px;top:92px";b.onclick=window.openPicker;document.querySelector(".stagewrap").appendChild(b)}
+}
+
 renderProducts();renderCart();
 
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;
