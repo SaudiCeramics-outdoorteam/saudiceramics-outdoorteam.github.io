@@ -111,6 +111,7 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline
 .page .note{font-size:12px;color:#6b6457;line-height:1.7;margin-top:auto}
 .page.full{grid-template-columns:1fr}
 .prodp{display:flex;flex-direction:column;height:100%;min-height:0;padding:clamp(14px,2.5vw,26px);gap:12px;padding-bottom:78px!important}
+.tsize{font:600 14px var(--body);color:#1f4e8c;margin-top:4px}
 .prodimg{flex:1;min-height:0;position:relative;background:#fff;border:1px solid #e3ded4;border-radius:4px;overflow:hidden}
 .prodimg img{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:contain}
 .prodcap{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
@@ -155,6 +156,7 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline
 #tileBox>.spec:has(> p:only-child),#bathBox>.spec:empty{padding-bottom:6px}
 .tt{display:block;aspect-ratio:1;background-size:50% auto;background-repeat:repeat;background-position:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
 .prods.tgrid button{position:relative}.tag{position:absolute;top:3px;right:3px;font:600 9px var(--body);font-style:normal;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.88);color:#1f4e8c}.tag.cer{color:#8a4b12}
+.tsz{position:absolute;top:3px;left:3px;font:700 9px var(--body);font-style:normal;padding:1px 5px;border-radius:4px;background:rgba(29,35,41,.78);color:#fff;font-variant-numeric:tabular-nums}
 img.hiwait{visibility:hidden}
 .ph-wait{display:flex;align-items:center;justify-content:center;min-height:140px;background:var(--accent-soft);color:var(--muted);font-size:12px}
 .toast{position:absolute;top:84px;left:50%;transform:translateX(-50%);padding:8px 14px;font-size:13px;pointer-events:none}
@@ -1048,6 +1050,7 @@ function tileSpec(t){const p=t.pack||{},num=v=>String(v||"").replace(/,/g,"");re
 const dsKey=t=>`${t.src}|${Math.min(+t.w,+t.h)}x${Math.max(+t.w,+t.h)}|${(+t.t).toFixed(1)}`;
 async function officialDS(t){try{const d=await getChunk("ds_0");return d[dsKey(t)]||null}catch(e){return null}}
 const tpURL=t=>`data/tp/${t.tpf||t.src+"_"+t.page}.jpg`;
+const tSize=t=>`${+t.w}×${+t.h}`,tSizeFull=t=>`المقاس ${+t.w}×${+t.h} سم · السماكة ${t.t} سم`;
 async function pageImg(t){if(t.src==="fac")return{sheet:SHEETS["t"+t.code],photo:t._p.photo};
   if(!t._photo&&t.tp)t._photo=tpURL(t);
   let d=null;try{d=(await getChunk(t.pg))[String(t.page)]}catch(e){}if(!d)return{photo:t._photo};
@@ -1068,7 +1071,7 @@ function renderTiles(host,z){tileHost=host;tileZone=z;
   host.innerHTML=`${grp?`<div class="tfilt"><span>ركّب البلاط على</span><div class="chips">${SURF[grp].map(([k,l])=>`<button type="button" data-surf="${k}" aria-pressed="${k===z}">${l}</button>`).join("")}</div></div>`:""}${types.length>1?`<div class="tfilt"><span>النوع</span><div class="chips">${["الكل",...types].map(v=>`<button type="button" data-type="${v}" aria-pressed="${(s.type||"الكل")===v}">${v}</button>`).join("")}</div></div>`:""}<div class="tfilt"><span>المقاس (سم)</span><div class="chips">${["الكل",...sizes].map(v=>`<button type="button" data-size="${v}" aria-pressed="${(s.size||"الكل")===v}">${v}</button>`).join("")}</div></div>
    <div class="tfilt"><span>السماكة</span><div class="chips">${["الكل",...ths].map(v=>`<button type="button" data-th="${v}" aria-pressed="${(s.th||"الكل")===v}">${v==="الكل"?v:v+" سم"}</button>`).join("")}</div></div>
    <p class="fine" style="margin:6px 0 0">${shown.length} تصميم</p>
-   <div class="prods tgrid"><button type="button" class="raw" data-i="-1" aria-pressed="${!cur}">${z==="facade"?"بلوك":"بدون"}</button>${shown.map((t,i)=>`<button type="button" data-i="${i}" aria-pressed="${cur===t}" title="${esc(t.name)} · ${t.code}"><i class="tt" role="img" aria-label="${esc(t.name)}" style="background-image:url(${t.thumb})"></i><span>${esc(t.name.replace(/^Ceramic (Wall|Floor) Tile /,""))}</span><em class="tag ${t.src==="cer"?"cer":"por"}">${t.cat}</em></button>`).join("")}</div>
+   <div class="prods tgrid"><button type="button" class="raw" data-i="-1" aria-pressed="${!cur}">${z==="facade"?"بلوك":"بدون"}</button>${shown.map((t,i)=>`<button type="button" data-i="${i}" aria-pressed="${cur===t}" title="${esc(t.name)} · ${t.code}"><i class="tt" role="img" aria-label="${esc(t.name)}" style="background-image:url(${t.thumb})"></i><span>${esc(t.name.replace(/^Ceramic (Wall|Floor) Tile /,""))}</span>${t.w?`<em class="tsz" dir="ltr">${tSize(t)}</em>`:""}</button>`).join("")}</div>
    <div class="spec" id="tspec"></div>`;
   host.querySelectorAll("[data-surf]").forEach(b=>b.onclick=()=>{const k=b.dataset.surf;if(grp==="living"){livingCat=k;renderTiles(host,k);syncNav("living")}else{bathCat={ball:"ball",floor:"bfloor",wall:"bwall"}[k];renderBath()}});
   host.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{s.type=b.dataset.type==="الكل"?null:b.dataset.type;s.size=null;s.th=null;renderTiles(host,z)});
@@ -1161,7 +1164,7 @@ function stairSpec(s,kind){return kind==="tread"?[["القطعة","درجة (Sta
   :[["القطعة","قائم (Stair Riser)"],["المقاس","15 × 120 سم"],["السماكة","2.0 سم"],["النوع","بورسلان مطفي، 6 وجوه"],["الاستخدام","داخلي وخارجي"],["قطع بالكرتون","2"],["م² بالكرتون","0.36"],["كغ بالكرتون","17.64"],["كرتون بالطبلية","90"],["م² بالطبلية","32.40"],["كغ بالطبلية","1,606"]]}
 function renderStairs(){const host=document.getElementById("tileBox");if(selected!=="stairs")return;
   const s=stairSel,pcs=stState.steps*Math.ceil(stState.width/1.2),boxes=Math.ceil(pcs/2);
-  host.innerHTML=`<div class="prods tgrid"><button type="button" class="raw" data-i="-1" aria-pressed="${!s}">خرسانة</button>${STAIRS.map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${s===x}"><img alt="${esc(x.name)}" src="${x.treads[0]}"><span>${esc(x.name)}</span></button>`).join("")}</div>
+  host.innerHTML=`<div class="prods tgrid"><button type="button" class="raw" data-i="-1" aria-pressed="${!s}">خرسانة</button>${STAIRS.map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${s===x}"><img alt="${esc(x.name)}" src="${x.treads[0]}"><em class="tsz" dir="ltr">32×120</em><span>${esc(x.name)}</span></button>`).join("")}</div>
    <div class="spec">${!s?`<p>اختر تصميم الدرج ويتركب على درجات المدخل.</p>`:`<img class="photo" id="stPh" title="اضغط للتكبير" alt="${esc(s.name)}" src="${s.photo}"><h3 dir="ltr">${esc(s.name)}</h3>
    <div class="code">${s.tread} · ${s.riser}</div><dl>${stairSpec(s,"tread").slice(1,5).map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
    <div class="calc"><h4>حساب الكمية</h4><div class="fields"><label for="stN">عدد الدرجات<input id="stN" type="number" min="1" value="${stState.steps}"></label><label for="stW">عرض الدرج (م)<input id="stW" type="number" min=".6" step=".1" value="${stState.width}"></label></div>
@@ -1449,13 +1452,13 @@ function buildPages(){
   const out=[];
   cart.forEach((it,i)=>{
     out.push(`<div class="prodp"><div class="prodimg"><img alt="${esc(it.name)}" src="${it.photo||it.thumb}"></div>
-    <div class="prodcap"><div><span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div></div>
+    <div class="prodcap"><div><span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div>${it.tile?`<div class="tsize">${tSizeFull(it.tile)}${it.tile.cat?` · ${it.tile.cat}`:""}</div>`:""}</div>
     <div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div></div></div>`);
     const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
   (window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
   out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
    <div style="overflow-x:auto"><table><tr><th>المنتج</th><th>المنطقة</th><th>الكمية</th></tr>
-   ${cart.map(it=>`<tr><td dir="ltr" style="text-align:right">${esc(it.name)}<br><small style="color:#6b6457">${it.code}</small></td><td>${it.zone}</td><td>${itemLine(it)}</td></tr>`).join("")}
+   ${cart.map(it=>`<tr><td dir="ltr" style="text-align:right">${esc(it.name)}<br><small style="color:#6b6457">${it.code}${it.tile?` · ${+it.tile.w}×${+it.tile.h} cm · ${it.tile.t} cm`:""}</small></td><td>${it.zone}</td><td>${itemLine(it)}</td></tr>`).join("")}
    </table></div>
    <p class="note">كميات البلاط محسوبة على المساحة اللي أدخلها العميل مع نسبة الهالك. كميات المكملات تقديرية. للتأكيد النهائي يُراجع المخطط مع مندوب المبيعات.</p></div>`);
   return out;
