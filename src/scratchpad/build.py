@@ -4,13 +4,15 @@ sys.path.insert(0,sp);from bathing import BATHING
 s=open('/home/claude/villa-src.html').read()
 from enhance import enhance
 _DSX=json.load(open('/tmp/claude-0/-home-claude/9b11369b-255f-547e-a148-3cb5bc61c84e/scratchpad/extra/ds_existing.json'))
+_OV=json.load(open(sp+'extra/overrides.json')) if os.path.exists(sp+'extra/overrides.json') else {}
 def attach(items,ewh=False):
     # official datasheets the user supplied for products already in the catalogue
     for it in items:
+        if it.get('code') in _OV:it.update(_OV[it['code']])
         if it.get('code') in _DSX['code']:it['ds']=_DSX['code'][it['code']]
         if ewh and it.get('cat')=='heater' and not it.get('ds'):it['ds']=_DSX['ewh']
     return items
-tex=json.load(open(sp+'pdf/tex3.json'));cat=enhance(json.load(open(sp+'acc/cat2.json')))
+tex=json.load(open(sp+'pdf/tex3.json'));cat=enhance(attach(json.load(open(sp+'acc/cat2.json'))))
 meta=[('111157542512016','NAJDI DESIGN'),('111157492512016','SANDY DESERT DARK'),('111156952512016','SANDY DESERT BEIGE'),('111157102512016','ROMAN TRAVERTINE'),('111147342512016','TRAVERTINO CREAM'),('111138692512016','LIMESTONE LIGHT')]
 prods=[{'code':c,'name':n,'faces':tex[c]['n'],'sqmBox':0.72,'kgBox':35.28,'boxPallet':32,'atlas':tex[c]['atlas'],'thumb':tex[c]['thumb'],'photo':tex[c]['photo']} for c,n in meta]
 J=lambda o:json.dumps(o,ensure_ascii=False)
