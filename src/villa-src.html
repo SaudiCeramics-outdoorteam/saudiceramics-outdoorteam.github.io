@@ -141,6 +141,8 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline
 .fine{font-size:11px;color:var(--muted);margin:8px 0 0}
 .page.export{position:relative;inset:auto;margin:0;width:794px;height:1123px;max-width:none;transform:none;animation:none;border-radius:0;box-shadow:none;grid-template-columns:1fr!important;grid-template-rows:none!important}
 .page.export.full{grid-template-columns:1fr!important}.page.export .eyebrow{letter-spacing:0}
+.prodcap h3,.sheethead b,.page h3,#tspec h3,#bspec h3,.spec h3{unicode-bidi:plaintext}
+.page.export,.page.export *{letter-spacing:0!important;word-spacing:normal!important;font-variant-ligatures:normal!important;text-rendering:auto!important}
 #exportStage{position:fixed;left:-20000px;top:0;width:794px;direction:rtl}
 .tfilt{margin-top:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -1144,7 +1146,7 @@ function renderTiles(host,z){tileHost=host;tileZone=z;
 /* ---------- brochure products (deduplicated) ---------- */
 const BRO=/*__BRO__*/,STAIRS=/*__STAIRS__*/;
 CAT.push(...BRO.filter(b=>!CAT.some(c=>c.code===b.code)));
-const PROFILES=CAT.filter(c=>c.cat==="profile"),ADHESIVES=["130940270020100","130941360040100","130941680020100","130941680010100","130940270010100","130941360000100","130941360020100","130941360010100"].map(CATby).filter(Boolean);
+const PROFILES=CAT.filter(c=>c.cat==="profile"),ADHESIVES=["130940270020100","130941360040100","130941680020100","130941680010100","130940270010100","130941360000100","130941360020100","130941360010100","130940270030100","130940270000100"].map(CATby).filter(Boolean);
 /* fittings: angle valves under the basin, shower arm/hose shown on the shower */
 build.fitting=function(p){const g=G.fitting;clear(g);const m=finish(p.hex||"#d9dde1"),y=.34,z=Z0+.05;
   [-.12,.12].forEach(dx=>{const x=VX+dx;bMesh(cyl(.018,.06,24),m,x,y,z,"fitting",g).rotation.x=Math.PI/2;
@@ -1258,7 +1260,7 @@ function setLivingMode(on){controls.minAzimuthAngle=on&&selected==="stairs"?-1.3
 /* ---------- hi-res images: big images live in data/hi_*.json and are swapped in on demand ---------- */
 const HIMAP=/*__HIMAP__*/,hiChunks={};
 const hiURL=u=>{if(typeof u!=="string"||!u.startsWith("hi:"))return Promise.resolve(u);const h=u.slice(3),c=HIMAP[h];if(!c)return Promise.resolve("");
-  return(hiChunks[c]||(hiChunks[c]=fetch("data/"+c+".json").then(r=>r.json()))).then(d=>d[h])};
+  return(hiChunks[c]||(hiChunks[c]=fetch("data/"+c+".json").then(r=>{if(!r.ok)throw 0;return r.json()}))).then(d=>{if(!d[h])throw 0;return d[h]}).catch(()=>{/* page is older than the data on the server: reload once to pick up the new version */try{if(!sessionStorage.getItem("scc-reload")){sessionStorage.setItem("scc-reload","1");location.reload()}}catch(e){}return""})};
 function fixImg(img){const s=img.getAttribute("src");if(!s||!s.startsWith("hi:"))return;img.dataset.hi=s;img.removeAttribute("src");img.classList.add("hiwait");
   hiURL(s).then(u=>{if(img.dataset.hi===s){img.src=u;img.classList.remove("hiwait")}})}
 new MutationObserver(ms=>ms.forEach(m=>{if(m.type==="attributes"){if(m.target.tagName==="IMG")fixImg(m.target);return}

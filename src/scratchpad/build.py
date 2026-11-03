@@ -44,6 +44,12 @@ for h in order:
     if size>1_500_000:
         json.dump(chunk,open(f'{out}/data/hi_{n}.json','w'));chunk={};size=0;n+=1
 if chunk: json.dump(chunk,open(f'{out}/data/hi_{n}.json','w'))
+# content-hashed chunk names: a cached old page can never read a re-shuffled chunk
+_ren={}
+for f in sorted(os.listdir(out+'/data')):
+    if f.startswith('hi_') and f.count('_')==1:
+        dg=hashlib.md5(open(out+'/data/'+f,'rb').read()).hexdigest()[:8];nf=f[:-5]+'_'+dg;os.rename(out+'/data/'+f,out+'/data/'+nf+'.json');_ren[f[:-5]]=nf
+himap={k:_ren.get(v,v) for k,v in himap.items()}
 s2=s2.replace('/*__HIMAP__*/',json.dumps(himap))
 print(len(order),'hi images in',n+1,'chunks',round(sum(len(v) for v in HI.values())/1048576,1),'MB')
 TRACK=(open(sp+'track_url.txt').read().strip() if os.path.exists(sp+'track_url.txt') else '')
