@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية</title><meta name="description" content="اختر بلاطك وأدواتك الصحية وسخاناتك على بيتك ثلاثي الأبعاد، واحصل على كتالوج PDF بالكميات — فريق المبيعات الخارجية Outdoor Team"><meta property="og:type" content="website"><meta property="og:site_name" content="الخزف السعودي"><meta property="og:title" content="شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية"><meta property="og:description" content="اختر بلاطك وأدواتك الصحية وسخاناتك على بيتك ثلاثي الأبعاد، واحصل على كتالوج PDF بالكميات — فريق المبيعات الخارجية Outdoor Team"><meta property="og:url" content="https://talha1998-sc.github.io/saudi-ceramics/"><meta property="og:image" content="https://talha1998-sc.github.io/saudi-ceramics/img/share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية"><meta name="twitter:image" content="https://talha1998-sc.github.io/saudi-ceramics/img/share.jpg"><link rel="icon" href="img/logo.png"></head><body>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية</title><meta name="description" content="اختر بلاطك وأدواتك الصحية وسخاناتك على بيتك ثلاثي الأبعاد، واحصل على كتالوج PDF بالكميات — فريق المبيعات الخارجية Outdoor Team"><meta property="og:type" content="website"><meta property="og:site_name" content="الخزف السعودي"><meta property="og:title" content="شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية"><meta property="og:description" content="اختر بلاطك وأدواتك الصحية وسخاناتك على بيتك ثلاثي الأبعاد، واحصل على كتالوج PDF بالكميات — فريق المبيعات الخارجية Outdoor Team"><meta property="og:url" content="https://saudiceramics-outdoorteam.github.io/"><meta property="og:image" content="https://saudiceramics-outdoorteam.github.io/img/share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية"><meta name="twitter:image" content="https://saudiceramics-outdoorteam.github.io/img/share.jpg"><link rel="icon" href="img/logo.png"></head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Reem+Kufi:wght@600&display=swap">
 <style>
@@ -1601,6 +1601,45 @@ document.getElementById("pkGo").onclick=()=>{
       window._guide=null;pages=buildPages();await exportPdf(mode,lang)}
     finally{cart.splice(0,cart.length,...saved);window._catMode=false;try{renderCart()}catch(e){}}}})};
 window.openPicker=()=>{pk.hidden=false;render()};
+/* ---------- product search by name or code ---------- */
+{
+const norm=t=>String(t||"").toLowerCase().replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[\s·×x*\-_,.]+/g," ").trim();
+function index(){const L=[];
+  TILES.forEach(t=>L.push({k:"tile",o:t,name:t.name.replace(/^Ceramic (Wall|Floor) Tile /,""),code:t.code,img:t.thumb||(t._p&&t._p.thumb),sub:`${t.cat||""} · ${+t.w}×${+t.h} سم · ${t.t} سم`}));
+  CAT.forEach(p=>L.push({k:"cat",o:p,name:p.name,code:p.code,img:p.img,sub:(BCATS.find(b=>b[0]===(p.cat==="basin"?"vanity":p.cat))||[0,""])[1]}));
+  BATHING.forEach(m=>m.variants.forEach(v=>L.push({k:"bathing",o:m,v,name:v.name,code:v.code,img:m.img,sub:"البانيو وأحواض القدم"})));
+  STAIRS.forEach(s=>L.push({k:"stairs",o:s,name:s.name,code:s.tread+" "+s.riser,img:s.treads[0],sub:"بلاط الدرج · 32×120"}));
+  L.forEach(x=>x.q=norm(x.name+" "+x.code+" "+x.sub));return L}
+async function open(x){sd.hidden=true;
+  if(x.k==="tile"){const t=x.o,z=t.zones;
+    if(z.includes("floor")||z.includes("wall")){select("living");livingCat="lall";await applyTile("lall",t);renderTiles(document.getElementById("tileBox"),"lall")}
+    else{const zz=["facade","court","roof","pool"].find(q=>z.includes(q));select(zz);await applyTile(zz,t);renderTiles(document.getElementById("tileBox"),zz)}}
+  else if(x.k==="stairs"){select("stairs");await applyStairs(x.o)}
+  else if(x.k==="bathing"){select("bath");bathCat="bathing";bathSel.bathing=x.o;const vi=x.o.variants.indexOf(x.v);bathVar[x.o.id]=vi;build.bathing(x.o,vi);renderBath()}
+  else{const p=x.o,c=p.cat==="basin"?"vanity":p.cat;select("bath");bathCat=c;bathSel[c]=p;try{build[c](p)}catch(e){}renderBath()}
+  try{syncNav(selected)}catch(e){}setTimeout(()=>document.getElementById("info").scrollTo({top:0}),80);track("بحث: "+x.code)}
+const sd=document.createElement("div");sd.id="searchDlg";sd.hidden=true;sd.setAttribute("role","dialog");sd.setAttribute("aria-label","بحث عن منتج");
+sd.innerHTML=`<div class="sbox"><div class="xhead"><h3>ابحث عن منتج</h3><button class="x" type="button" id="sClose" aria-label="إغلاق">×</button></div>
+<input id="sIn" type="search" placeholder="اكتب اسم المنتج أو الكود أو المقاس…" autocomplete="off"><p class="fine" id="sInfo"></p><div id="sRes"></div></div>`;
+document.body.appendChild(sd);
+{const css=document.createElement("style");css.textContent=`#searchDlg{position:fixed;inset:0;z-index:78;background:rgba(10,12,16,.55);display:flex;align-items:flex-start;justify-content:center;padding:6vh 12px 12px}#searchDlg[hidden]{display:none}
+#searchDlg .sbox{background:var(--solid);color:var(--fg);border-radius:12px;padding:16px;width:min(620px,100%);max-height:86vh;display:flex;flex-direction:column;gap:8px}#searchDlg .xhead{display:flex;justify-content:space-between;align-items:center}#searchDlg h3{margin:0;font:600 18px var(--display)}
+#sIn{font-size:16px;padding:10px 12px}#sRes{overflow:auto;display:flex;flex-direction:column;gap:4px}
+#sRes button{display:flex;gap:10px;align-items:center;text-align:start;background:none;border:1px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;color:var(--fg)}#sRes button:hover{background:var(--accent-soft)}
+#sRes img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:4px;flex:none}#sRes b{display:block;font-size:13px}#sRes small{color:var(--muted);font-size:11px}`;document.head.appendChild(css)}
+let IDX=null;const inp=sd.querySelector("#sIn"),res=sd.querySelector("#sRes");
+function run(){const q=norm(inp.value);if(!IDX||IDX.length<10)IDX=index();
+  if(!q){res.innerHTML="";sd.querySelector("#sInfo").textContent=`${IDX.length} منتج متاح للبحث`;return}
+  const words=q.split(" ");const L=IDX.filter(x=>words.every(w=>x.q.includes(w))).slice(0,60);
+  sd.querySelector("#sInfo").textContent=L.length?`${L.length}${L.length===60?"+":""} نتيجة`:"ما لقينا منتج بهذا الاسم أو الكود";
+  res.innerHTML=L.map((x,i)=>`<button type="button" data-i="${i}"><img alt="" src="${x.img||""}"><span><b dir="auto">${esc(x.name)}</b><small dir="auto">${esc(x.code)} · ${esc(x.sub)}</small></span></button>`).join("");
+  res.querySelectorAll("button").forEach(b=>b.onclick=()=>open(L[+b.dataset.i]))}
+inp.oninput=run;sd.querySelector("#sClose").onclick=()=>sd.hidden=true;sd.onclick=e=>{if(e.target===sd)sd.hidden=true};
+window.openSearch=()=>{sd.hidden=false;IDX=null;run();setTimeout(()=>inp.focus(),50)};
+{const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="srchBtn";b.textContent="🔍 بحث عن منتج";b.style.cssText="right:auto;left:12px;top:132px";b.onclick=window.openSearch;document.querySelector(".stagewrap").appendChild(b)}
+}
+
+
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="pickBtn";b.textContent="📄 تصدير كتالوج";b.style.cssText="right:auto;left:12px;top:92px";b.onclick=window.openPicker;document.querySelector(".stagewrap").appendChild(b)}
 }
 
