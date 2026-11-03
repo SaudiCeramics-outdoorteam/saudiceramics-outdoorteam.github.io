@@ -16,3 +16,17 @@ M=[
 ]
 for m in M: m.update(im[m["id"]])
 BATHING=M
+
+# MALAGA square shower tray 70x70 (added 3 Nov, user-supplied photo + datasheet)
+def _malaga():
+    import io,base64,pypdfium2 as _p
+    from PIL import Image as _I
+    A='/mnt/user-data/attachments/9b11369b-255f-547e-a148-3cb5bc61c84e/'
+    def e(im):b=io.BytesIO();im.convert('RGB').save(b,'JPEG',quality=88);return 'data:image/jpeg;base64,'+base64.b64encode(b.getvalue()).decode()
+    ph=e(_I.open(A+'8ca00dac-image.png'))
+    return dict(id='MALAGA',title='MALAGA',kind=[b for b in BATHING if b['id']=='TOLEDO'][0]['kind'],img=ph,photo=ph,
+      spec=[['النوع','حوض قدم مربع'],['المقاس','70×70 سم'],['التركيب','قبل البلاط'],['ملاحظة','غطاء فتحة التصريف والهراب يباع على حدة']],
+      variants=[dict(code='180561600101000',name='Shower Tray MALAGA 70 X 70 (Before Tiles)',label='70×70 سم',size=[.7,.7])],
+      _sheet=e(_p.PdfDocument(A+'6ba12ffe-Malaga_70x70_ST.pdf')[0].render(scale=200/72).to_pil()))
+if not any(b['id']=='MALAGA' for b in BATHING):
+    _m=_malaga();MALAGA_SHEET=_m.pop('_sheet');BATHING.append(_m)
