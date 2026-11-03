@@ -577,7 +577,7 @@ function putCart(item){
   if(ex){Object.assign(ex,item);say(`تحدّثت كمية ${item.name}`)}else{cart.push(item);say(`انضاف ${item.name} للسلة`)}
   renderCart();clearTimeout(window._trT);window._trT=setTimeout(()=>track("تحديث السلة"),15000);
 }
-const inCart=code=>cart.find(i=>i.code===code);
+let inCart=code=>cart.find(i=>i.code===code);
 function itemLine(it){return `${fmt(it.qty)} ${it.unit}${it.sqmPer?` · ${fmt(it.qty*it.sqmPer,2)} م²`:""}`}
 function renderCart(){
   document.getElementById("cartCount").textContent=cart.length;
@@ -962,7 +962,7 @@ function renderBath(){
   document.getElementById("bMinus").onclick=()=>bq.value=Math.max(1,(+bq.value||1)-1);
   document.getElementById("bPlus").onclick=()=>bq.value=(+bq.value||0)+1;
   document.getElementById("bAdd").onclick=()=>{
-    cart.filter(i=>i.bcat===bathCat&&i.code!==cur.code&&!["acc","drain","fitting","kitchen"].includes(bathCat)).forEach(i=>cart.splice(cart.indexOf(i),1));
+    cart.filter(i=>i.bcat===bathCat&&i.sp===spaceName("bath")&&i.code!==cur.code&&!["acc","drain","fitting","kitchen"].includes(bathCat)).forEach(i=>cart.splice(cart.indexOf(i),1));
     putCart(Object.assign(catItem(cur,Math.max(1,parseInt(bq.value,10)||1),"الحمام"),{bcat:bathCat}));renderBath()};
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo||cur.img,cur.name);const sb=document.getElementById("bSheet");if(sb)sb.onclick=()=>zoom(cur.ds&&cur.ds.length?cur.ds[0]:SHEETS[cur.sheet],cur.name);
 }
@@ -971,13 +971,13 @@ function renderBathing(bc,bp,bs){
   bp.innerHTML="";bp.className="prods wide";
   BATHING.forEach(m=>{const b=document.createElement("button");b.setAttribute("aria-pressed",String(m===cur));b.title=m.title;
     b.innerHTML=`<img alt="${esc(m.title)}" src="${m.img}"><span>${m.title}</span>`;b.onclick=()=>{bathSel.bathing=m;build.bathing(m,bathVar[m.id]||0);renderBath()};bp.appendChild(b)});
-  const had=cart.find(i=>i.bcat==="bathing");
+  const had=cart.find(i=>i.bcat==="bathing"&&i.sp===spaceName("bath"));
   bs.innerHTML=`<img class="photo" title="اضغط للتكبير" alt="${esc(cur.title)}" src="${cur.photo}"><h3>${esc(v.name)}</h3><div class="code">${v.code}</div>
    ${cur.variants.length>1?`<div class="fields" style="margin-top:10px;grid-template-columns:1fr"><label for="vSel">المقاس والاتجاه<select id="vSel">${cur.variants.map((x,i)=>`<option value="${i}" ${i===vi?"selected":""}>${x.label}</option>`).join("")}</select></label></div>`:""}
    <dl>${cur.spec.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
    <div class="row"><button class="btn" id="bAdd">${had&&had.code===v.code?"بالسلة ✓":had?"استبدل بالسلة":"أضف للسلة"}</button><button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button></div>`;
   const vs=document.getElementById("vSel");if(vs)vs.onchange=()=>{bathVar[cur.id]=+vs.value;build.bathing(cur,+vs.value);renderBath()};
-  document.getElementById("bAdd").onclick=()=>{cart.filter(i=>i.bcat==="bathing").forEach(i=>cart.splice(cart.indexOf(i),1));
+  document.getElementById("bAdd").onclick=()=>{cart.filter(i=>i.bcat==="bathing"&&i.sp===spaceName("bath")).forEach(i=>cart.splice(cart.indexOf(i),1));
     putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,zone:"الحمام",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
   document.getElementById("bSheet").onclick=()=>zoom(SHEETS["b"+cur.id],cur.title);
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo,cur.title);
@@ -1116,7 +1116,7 @@ function renderTiles(host,z){tileHost=host;tileZone=z;
   document.getElementById("tAll").onclick=()=>{sugg().forEach(x=>putCart(catItem(x.p,x.qty,TZ[z].label)));drawSug()};
   document.getElementById("tSheet").onclick=async()=>{const off=await officialDS(cur);if(off&&off.length)return zoom(off[0],cur.name+" · الداتا شيت الرسمية");const{sheet}=await pageImg(cur);if(sheet)zoom(sheet,cur.name)};
   document.getElementById("tAdd").onclick=()=>{const q=tqty(z,cur);
-    cart.filter(i=>(i.tz===z&&i.code!==cur.code)||(CONFLICT[z]||[]).includes(i.tz)).forEach(i=>cart.splice(cart.indexOf(i),1));
+    {const sp=["lall","lfloor","lwall"].includes(z)?spaceName("room"):["ball","wall","floor"].includes(z)?spaceName("bath"):null;cart.filter(i=>(!sp||!i.sp||i.sp===sp)&&((i.tz===z&&i.code!==cur.code)||(CONFLICT[z]||[]).includes(i.tz))).forEach(i=>cart.splice(cart.indexOf(i),1));}
     (CONFLICT[z]||[]).forEach(k=>{tileSel[k]=null});
     putCart({code:cur.code,name:cur.name,color:"",thumb:cur.thumb,tile:cur,zone:TZ[z].label,tz:z,qty:q.boxes,unit:"كرتون",sqmPer:parseFloat(cur.pack.sqm)||0,spec:tileSpec(cur)});refreshTilePanel()};
   upd()}
@@ -1224,12 +1224,12 @@ const livLight=new THREE.PointLight(0xfff1de,.9,12,1.4);livLight.position.set(0,
 const livLight2=new THREE.PointLight(0xe8f1ff,.35,10,1.6);livLight2.position.set(LX0+.8,1.8,LZ0+2.2);living.add(livLight2);
 ZONES.living={title:"داخل البيت",text:"الصالة من الداخل. اختر بلاط الأرضيات أو الجدران وشوفه مركّب على المكان.",cats:[],pos:[LX+5.2,5.4,6.4],target:[LX-.4,.6,-.4]};
 const INT=["floor","wall"];
-Object.assign(TZ,{lall:{label:"أرضيات وجدران الصالة",area:()=>81,list:INT,meshes:["lfloor","lwall"],grp:"living"},lfloor:{label:"أرضية الصالة",area:()=>33,list:INT,grp:"living"},lwall:{label:"جدران الصالة",area:()=>48,list:INT,grp:"living"},
-  ball:{label:"أرضيات وجدران دورات المياه",area:()=>24,list:INT,meshes:["floor","wall"],grp:"bath"}});
+Object.assign(TZ,{lall:{label:"أرضيات وجدران",area:()=>81,list:INT,meshes:["lfloor","lwall"],grp:"living"},lfloor:{label:"الأرضية",area:()=>33,list:INT,grp:"living"},lwall:{label:"الجدران",area:()=>48,list:INT,grp:"living"},
+  ball:{label:"أرضيات وجدران",area:()=>24,list:INT,meshes:["floor","wall"],grp:"bath"}});
 TZ.floor.list=INT;TZ.wall.list=INT;TZ.floor.grp="bath";TZ.wall.grp="bath";
 const SURF={living:[["lall","الأرضيات والجدران"],["lfloor","الأرضيات فقط"],["lwall","الجدران فقط"]],bath:[["ball","الأرضيات والجدران"],["floor","الأرضيات فقط"],["wall","الجدران فقط"]]};
 const CONFLICT={lall:["lfloor","lwall"],lfloor:["lall"],lwall:["lall"],ball:["floor","wall"],floor:["ball"],wall:["ball"]};
-TZ.wall.label="جدران دورات المياه";TZ.floor.label="أرضية دورات المياه";
+TZ.wall.label="الجدران";TZ.floor.label="الأرضية";
 let livSaved=null;
 function setLivingMode(on){controls.minAzimuthAngle=on&&selected==="stairs"?-1.3:on?.05:controls.minAzimuthAngle;if(on===living.visible)return;living.visible=on;
   if(on){hemi.intensity=.5;sun.intensity=.2;livSaved={a:[controls.minAzimuthAngle,controls.maxAzimuthAngle],d:[controls.minDistance,controls.maxDistance],p:controls.maxPolarAngle};
@@ -1457,8 +1457,8 @@ function buildPages(){
     out.push(`<div class="prodp"><div class="prodimg"><img alt="${esc(it.name)}" src="${it.photo||it.thumb}"></div>
     <div class="prodcap"><div><span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div>${it.tile?`<div class="tsize">${tSizeFull(it.tile)}${it.tile.cat?` · ${it.tile.cat}`:""}</div>`:""}</div>
     ${window._catMode?"":`<div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div>`}</div></div>`);
-    const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
-  (window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
+    if(window._noSheets)return;const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
+  (window._noSheets?[]:window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
   if(!window._catMode)out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
    <div style="overflow-x:auto"><table><tr><th>المنتج</th><th>المنطقة</th><th>الكمية</th></tr>
    ${cart.map(it=>`<tr><td dir="ltr" style="text-align:right">${esc(it.name)}<br><small style="color:#6b6457">${it.code}${it.tile?` · ${+it.tile.w}×${+it.tile.h} cm · ${it.tile.t} cm`:""}</small></td><td>${it.zone}</td><td>${itemLine(it)}</td></tr>`).join("")}
@@ -1520,16 +1520,17 @@ async function exportPdf(mode,lang){ /* mode: ms | ms+pq | profile */
   say(mode==="ms"?"جاري تجهيز الملف…":"جاري تجهيز الملف، قد ياخذ دقيقة…");
   try{let blob,name;
     if(mode==="profile"){blob=await (await fetch(DOCS.profile[lang])).blob();name=lang==="ar"?"الملف-التعريفي-الخزف-السعودي.pdf":"Saudi-Ceramics-Company-Profile.pdf"}
-    else{const pdf=await renderPagesPdf(),title=window._catMode?"كتالوج":"Material-Submittal";
-      if(mode==="ms"){blob=pdf.output("blob");name=fname(title)}
+    else{let pdf;if(mode==="cat"){window._noSheets=true;try{pages=buildPages();pdf=await renderPagesPdf()}finally{window._noSheets=false;pages=buildPages()}}else pdf=await renderPagesPdf();const title=mode==="cat"||window._catMode?"كتالوج":"Material-Submittal";
+      if(mode==="ms"||mode==="cat"){blob=pdf.output("blob");name=fname(title)}
       else{const parts=[pdf.output("arraybuffer"),await (await fetch(DOCS.pq[lang])).arrayBuffer()];if(document.getElementById("xFinCk").checked)for(const f of FIN)parts.push(await (await fetch(f)).arrayBuffer());blob=await mergePdfs(parts);name=fname(title+"-PreQualification")}}
     const ok=await saveBlob(blob,name);if(!ok)return false;
-    say("تم حفظ الملف PDF");track(mode==="profile"?"تحميل الملف التعريفي":mode==="ms"?"تصدير PDF":"تصدير PDF + Pre-Qualification");
+    say("تم حفظ الملف PDF");track(mode==="profile"?"تحميل الملف التعريفي":mode==="cat"?"تصدير كتالوج فقط":mode==="ms"?"تصدير PDF":"تصدير PDF + Pre-Qualification");
     if(!window._catMode&&mode!=="profile"){const l=waLink();const box=document.getElementById("waAfter");if(l&&box){box.querySelector("a").href=l;box.hidden=false}}
     return true}catch(e){if(!(e&&e.code==="declined"))say("ما قدرنا نجهز الملف، حاول مرة ثانية");return false}}
 /* export choices */
 const xd=document.createElement("div");xd.id="exportDlg";xd.hidden=true;xd.setAttribute("role","dialog");xd.setAttribute("aria-label","خيارات التصدير");
 xd.innerHTML=`<div class="xbox"><div class="xhead"><h3>تصدير الملف</h3><button class="x" type="button" id="xClose" aria-label="إغلاق">×</button></div>
+ <label class="xopt"><input type="radio" name="xm" value="cat"><span><b>الكتالوج فقط</b><small>صور المنتجات المختارة ومواصفاتها، بدون الداتا شيت</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="ms" checked><span><b>Material Submittal</b><small>صور المنتجات + الداتا شيت + الكميات</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="ms+pq"><span><b>Material Submittal + Pre-Qualification</b><small>الكتالوج ومعه ملف التأهيل المسبق (الملف التعريفي، السجلات، الشهادات، الاعتمادات، المشاريع)</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="profile"><span><b>الملف التعريفي للشركة فقط</b><small>Company Profile</small></span></label>
@@ -1543,7 +1544,7 @@ document.body.appendChild(xd);
 .xopt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px;cursor:pointer}.xopt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
 .xopt b{display:block;font-size:14px}.xopt small{color:var(--muted);font-size:12px;line-height:1.5}.xlang{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}`;document.head.appendChild(css)}
 let xLang="ar",xCtx=null;
-const xSync=()=>{const m=xd.querySelector('input[name=xm]:checked').value;document.getElementById("xLang").hidden=m==="ms";document.getElementById("xFin").hidden=m!=="ms+pq"};
+const xSync=()=>{const m=xd.querySelector('input[name=xm]:checked').value;document.getElementById("xLang").hidden=m==="ms"||m==="cat";document.getElementById("xFin").hidden=m!=="ms+pq"};
 xd.querySelectorAll('input[name=xm]').forEach(r=>r.onchange=xSync);
 xd.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{xLang=b.dataset.l;xd.querySelectorAll('[data-l]').forEach(c=>c.setAttribute("aria-pressed",String(c===b)))});
 document.getElementById("xClose").onclick=()=>{xd.hidden=true;if(xCtx&&xCtx.cancel)xCtx.cancel()};
@@ -1614,6 +1615,58 @@ renderer.setAnimationLoop(now=>{
     if(k>=1)anim=null}
   controls.update();renderer.render(scene,camera);
 });
+/* ---------- multiple rooms / bathrooms: each space has its own name, size, tiles and fittings ---------- */
+{
+const RZ=["lall","lfloor","lwall"],BZ=["ball","wall","floor"],BK=Object.keys(G);
+const SP={room:[{name:"الصالة",L:6.4,W:5.2,H:3.1}],bath:[{name:"دورة المياه 1",L:2.6,W:2.2,H:2.8}]},cur={room:0,bath:0};
+const area=(s,k)=>k==="floor"?s.L*s.W:k==="wall"?2*(s.L+s.W)*s.H:s.L*s.W+2*(s.L+s.W)*s.H;
+const r1=v=>Math.round(v*10)/10;
+TZ.lall.area=()=>r1(area(SP.room[cur.room],"all"));TZ.lfloor.area=()=>r1(area(SP.room[cur.room],"floor"));TZ.lwall.area=()=>r1(area(SP.room[cur.room],"wall"));
+TZ.ball.area=()=>r1(area(SP.bath[cur.bath],"all"));TZ.floor.area=()=>r1(area(SP.bath[cur.bath],"floor"));TZ.wall.area=()=>r1(area(SP.bath[cur.bath],"wall"));
+const zonesOf=t=>t==="room"?RZ:BZ;
+function save(t){const s=SP[t][cur[t]];s.tileSel={};s.tileState={};zonesOf(t).forEach(z=>{s.tileSel[z]=tileSel[z]||null;if(tileState[z])s.tileState[z]=JSON.parse(JSON.stringify(tileState[z]))});
+  if(t==="bath")s.bathSel=Object.assign({},bathSel)}
+async function load(t){const s=SP[t][cur[t]];
+  for(const z of zonesOf(t)){delete tileState[z];if(s.tileState&&s.tileState[z])tileState[z]=JSON.parse(JSON.stringify(s.tileState[z]));try{await applyTile(z,(s.tileSel&&s.tileSel[z])||null)}catch(e){}}
+  if(t==="bath"){if(!s.bathSel)s.bathSel=Object.assign({},SP.bath[0].bathSel||bathSel);Object.assign(bathSel,s.bathSel);BK.forEach(k=>{try{if(bathSel[k]){if(k==="bathing")build.bathing(bathSel.bathing,bathVar[bathSel.bathing.id]||0);else build[k](bathSel[k])}}catch(e){}})}}
+async function go(t,i){save(t);cur[t]=i;await load(t);bar(t);try{t==="bath"?renderBath():renderTiles(document.getElementById("tileBox"),livingCat)}catch(e){}}
+window.spaceName=t=>SP[t][cur[t]].name;
+const typeOf=it=>(it.bcat||BZ.includes(it.tz))?"bath":RZ.includes(it.tz)?"room":null;
+/* cart: an item belongs to the active space of its type */
+const _put=putCart;putCart=function(item){const t=typeOf(item);if(t&&!item.sp){item.sp=SP[t][cur[t]].name;item.zone=item.sp+(item.zone&&!item.zone.startsWith(item.sp)?" · "+item.zone:"")}
+  if(!item.sp)return _put(item);const ex=cart.find(i=>i.code===item.code&&i.sp===item.sp);
+  if(ex){Object.assign(ex,item);say(`تحدّثت كمية ${item.name}`)}else{cart.push(item);say(`انضاف ${item.name} لـ${item.sp}`)}
+  renderCart();clearTimeout(window._trT);window._trT=setTimeout(()=>track("تحديث السلة"),15000)};
+const _splice=Array.prototype.splice;
+inCart=code=>{const t=bath.visible?"bath":living.visible?"room":null;return cart.find(i=>i.code===code&&(!i.sp||!t||i.sp===SP[t][cur[t]].name))};
+/* when a bath category item is replaced, only replace it inside the same bathroom */
+
+/* the bar */
+const el=document.createElement("div");el.id="spaceBar";el.hidden=true;
+const info=document.getElementById("tileBox").parentNode;info.insertBefore(el,document.getElementById("bathBox"));
+{const css=document.createElement("style");css.textContent=`#spaceBar{display:flex;flex-direction:column;gap:6px;padding:8px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px}#spaceBar .chips{display:flex;flex-wrap:wrap;gap:6px}
+#spaceBar .add{border-style:dashed}#spaceBar form{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;align-items:end}#spaceBar form label{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+#spaceBar form .nm{grid-column:1/-1}#spaceBar form .row{grid-column:1/-1;display:flex;gap:6px;margin:0}#spaceBar .dims{font-size:12px;color:var(--muted)}`;document.head.appendChild(css)}
+let editing=null;
+function bar(t){if(!t){el.hidden=true;return}el.hidden=false;const L=SP[t],s=L[cur[t]],word=t==="room"?"غرفة":"دورة مياه";
+  el.innerHTML=`<div class="chips">${L.map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===cur[t]}">${esc(x.name)}</button>`).join("")}<button type="button" class="add" data-add>+ إضافة ${word}</button></div>
+   <div class="dims">${esc(s.name)}: ${s.L}×${s.W} م، ارتفاع ${s.H} م · أرضية ${r1(area(s,"floor"))} م² · جدران ${r1(area(s,"wall"))} م² <button type="button" class="btn ghost" data-edit style="padding:2px 8px;font-size:12px">تعديل</button></div>
+   ${editing?`<form id="spForm"><label class="nm">الاسم<input name="n" required value="${esc(editing.name)}"></label><label>الطول (م)<input name="L" type="number" step=".1" min=".5" required value="${editing.L}"></label><label>العرض (م)<input name="W" type="number" step=".1" min=".5" required value="${editing.W}"></label><label>الارتفاع (م)<input name="H" type="number" step=".1" min="1" required value="${editing.H}"></label><span></span><div class="row"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" data-cancel>إلغاء</button>${editing.i!=null&&L.length>1?`<button class="btn ghost" type="button" data-del>حذف</button>`:""}</div></form>`:""}`;
+  el.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{editing=null;go(t,+b.dataset.i)});
+  el.querySelector("[data-add]").onclick=()=>{editing={name:`${t==="room"?"غرفة":"دورة المياه"} ${L.length+1}`,L:t==="room"?4:2.4,W:t==="room"?4:2,H:t==="room"?3:2.8,i:null};bar(t)};
+  el.querySelector("[data-edit]").onclick=()=>{editing=Object.assign({i:cur[t]},s);bar(t)};
+  const f=document.getElementById("spForm");if(f){f.querySelector("[data-cancel]").onclick=()=>{editing=null;bar(t)};
+    const d=f.querySelector("[data-del]");if(d)d.onclick=()=>{const old=L[editing.i].name;cart.splice(0,cart.length,...cart.filter(i=>i.sp!==old));L.splice(editing.i,1);cur[t]=0;editing=null;load(t).then(()=>{bar(t);renderCart();try{t==="bath"?renderBath():renderTiles(document.getElementById("tileBox"),livingCat)}catch(e){}})};
+    f.onsubmit=e=>{e.preventDefault();const fd=new FormData(f),n=String(fd.get("n")).trim()||editing.name,v={name:n,L:+fd.get("L"),W:+fd.get("W"),H:+fd.get("H")};
+      if(L.some((x,i)=>x.name===n&&i!==editing.i)){say("الاسم مستخدم، اختر اسم ثاني");return}
+      if(editing.i==null){save(t);L.push(v);cur[t]=L.length-1;editing=null;load(t).then(()=>{bar(t);try{t==="bath"?renderBath():renderTiles(document.getElementById("tileBox"),livingCat)}catch(e){}});say(`انضافت ${n}، اختر لها البلاط${t==="bath"?" والأدوات الصحية":""}`)}
+      else{const old=L[editing.i].name;Object.assign(L[editing.i],v);cart.forEach(i=>{if(i.sp===old){i.sp=n;i.zone=i.zone.replace(old,n)}});
+        cart.forEach(i=>{if(i.sp===n&&i.tile&&i.tz){const tz=i.tz;const s2=zstate(tz);s2.area=null;s2.boxes=null}});editing=null;bar(t);renderCart();try{t==="bath"?renderBath():renderTiles(document.getElementById("tileBox"),livingCat)}catch(e){}}}}}
+const _select=select;select=function(zone,fly){_select(zone,fly);editing=null;bar(zone==="bath"?"bath":zone==="living"?"room":null)};
+try{bar(selected==="bath"?"bath":selected==="living"?"room":null)}catch(e){}
+window.__spaces=SP;
+}
+
 /* ---------- realism pass: filmic tone mapping, real sky, landscaping, and a "finished house" look (glazing, doors, no site clutter) ---------- */
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.82;
 hemi.color.set(0x8fa6bf);hemi.groundColor.set(0x7d6c58);sun.color.setRGB(1.75,1.58,1.36);
