@@ -27,7 +27,7 @@ out='/home/claude/villa'; os.makedirs(out+'/img',exist_ok=True);os.makedirs(out+
 for f in os.listdir(out+'/img'): os.remove(out+'/img/'+f)
 for f in os.listdir(out+'/data'):
     if f.startswith('hi_'): os.remove(out+'/data/'+f)
-os.system(f'cp {sp}logo.png {out}/img/logo.png')
+os.system(f'cp {sp}logo.png {out}/img/logo.png && cp {sp}saudimade.png {out}/img/saudimade.png')
 HI={};order=[]
 def sub(m):
     d=m.group(0)
