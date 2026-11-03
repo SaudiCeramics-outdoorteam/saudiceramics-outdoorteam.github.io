@@ -1354,7 +1354,10 @@ finish=function(hex){const c=new THREE.Color(hex||"#d9dde1"),hsl={};c.getHSL(hsl
 const solarG=new THREE.Group();scene.add(solarG);
 const SOLAR_AT=[3.2,ROOF,-2.6];
 /* kitchen items have no kitchen in the scene: shown by photo + datasheet */
-build.kitchen=function(){};{const k=CAT.find(c=>c.cat==="kitchen");if(k)bathSel.kitchen=k;const f=CAT.find(c=>c.cat==="fitting");if(f&&!bathSel.fitting)bathSel.fitting=f}
+build.kitchen=function(){};
+{const _t=build.toilet;build.toilet=function(p){if(!p||!p.arabic)return _t(p);const g=G.toilet;clear(g);const w=glossy("#f6f6f4",.12),x=X0+.5,z=Z0+.6;
+  B(.435,.04,.535,w,x,.0,z,"toilet",g);const bowl=bMesh(new THREE.CylinderGeometry(.11,.08,.03,32),SM({color:0xdfe3e2,roughness:.15}),x,.035,z-.13,"toilet",g);
+  bMesh(new THREE.CylinderGeometry(.04,.04,.032,24),SM({color:0x222222}),x,.036,z-.05,"toilet",g);[-1,1].forEach(sd=>{for(let i=0;i<9;i++)B(.1,.008,.012,w,x+sd*.15,.04,z-.06+i*.025,"toilet",g)})}}{const k=CAT.find(c=>c.cat==="kitchen");if(k)bathSel.kitchen=k;const f=CAT.find(c=>c.cat==="fitting");if(f&&!bathSel.fitting)bathSel.fitting=f}
 /* single stainless accessories get their own shape on the side wall */
 {const _acc=build.acc;build.acc=function(p){if(!p||!p.kind)return _acc(p);const g=G.acc;clear(g);const m=finish(p.hex),x=X0+.01,z=.9,y=1.15;
   const box=(w,h,d,yy)=>B(d,h,w,m,x+d/2,yy,z,"acc",g);
