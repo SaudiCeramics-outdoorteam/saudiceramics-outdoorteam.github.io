@@ -80,6 +80,15 @@ NEWDS={'130230670405200':'7b541966-AI0113CS.pdf','130230670315200':'38fcbb33-130
 for n in N:
     if n['code'] in NEWDS:n['ds']=pages(NEWDS[n['code']])
 
+# ---- batch 3 (3 Nov) ----
+for cat,code,name,f,spec,kw in [
+ ('fitting','130170530015200','فلش ميتر GEM-2 · 137-1.6','1c6ddb41-130170530015200_-_GEM-2_137-1.6_Art3070840.pdf',[["النوع","فلش ميتر مكشوف للكرسي"],["الاستهلاك","1.6 جالون/دفعة"]],{}),
+ ('fitting','130170530035200','فلش ميتر ROYAL · 137-1.6','66a8eee9-130170530035200_-_ROYAL_137-1.6_Art3910808.pdf',[["النوع","فلش ميتر يدوي"],["الاستهلاك","1.6 جالون/دفعة"],["التشطيب","كروم لامع"]],{}),
+ ('fitting','130120150050000','طقم GROHE RAPID SL 3 في 1 للكرسي · 3874500D','16885b25-GROHE_Technical_Data_Sheets-130120150050000_3874500D_1.pdf',[["الماركة","GROHE"],["النوع","هيكل + خزان دفن + لوحة دفع"],["ارتفاع التركيب","1.13 م"]],{'hex':'#e8e8e6','color':''}),
+ ('tile','130941680020100','لاصق بلاط C2TE · 130941680020100','dccf2544-130941680020100.pdf',[["التصنيف","C2TE"]],{'hex':'#bdbdbd','color':''}),
+ ('tile','130941680010100','لاصق بلاط C2TE · 130941680010100','f5c64ab3-130941680010100.pdf',[["التصنيف","C2TE"]],{'hex':'#eeeeee','color':''})]:
+    kw=dict(kw);hexc=kw.pop('hex',CH);col=kw.pop('color','كروم');N.append(gen(cat,code,name,f,spec,hexc=hexc,color=col,unit='كيس' if cat=='tile' else 'قطعة',**kw))
+
 POST={'130230670225200':(0,.09,1,1),'130571690009300':(.07,0,1,1),'130461734739901':(0,0,1,.955)}
 for n in N:
     if n['code'] in POST:
@@ -87,7 +96,7 @@ for n in N:
     n['img']=n['photo']
 json.dump(N,open(X+'new_items.json','w'),ensure_ascii=False)
 # datasheets for products already in the catalogue
-DS={'121550253010010':pages('05a4348f-Dimension_Sky_WC_3L_25cm_Wash_Down_S-Strap__Floor_Mounted_121550253010010_1.pdf'),'121570265010020':pages('008eb3bb-Infinity_WH_WC_PT_RL_4.5L_HP_-_Drawing.pdf'),'121490131010020':pages('aefc7802-Mirage_WB_1H_WH_HPCM-Drawing.pdf')}
+DS={'121550253010010':pages('05a4348f-Dimension_Sky_WC_3L_25cm_Wash_Down_S-Strap__Floor_Mounted_121550253010010_1.pdf'),'121570265010020':pages('008eb3bb-Infinity_WH_WC_PT_RL_4.5L_HP_-_Drawing.pdf'),'121490131010020':pages('aefc7802-Mirage_WB_1H_WH_HPCM-Drawing.pdf'),'121510133010030':pages('6a0292b5-Spark_WB_1H_Floor_Stand_White_FFC_121510133010030.pdf')}
 EWH=pages('18cdff66-SCC_Lot-01_technical_data_sheet_Local-_Vertical__Horizontal_EWH_7.pdf')
 json.dump({'code':DS,'ewh':EWH,'guide':pages('130e7c55-Tiles_installation_guide_1.pdf')},open(X+'ds_existing.json','w'))
 print(len(N),'new items')
