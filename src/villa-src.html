@@ -1760,6 +1760,21 @@ function explainTile(o){const lines=[];const sz=o.w?`${o.w}x${o.h}`:null;
     ks.forEach(k=>{const v=DSI[k],[_,z,th]=k.split("|");lines.push(`📄 ${s==="por"?"بورسلان":"سيراميك"} ${z.replace("x","×")} · سماكة ${th} سم (من الداتا شيت الرسمية):\n`+[v.g&&`• المجموعة: ${v.g} (حسب ISO 13006)`,v.wa&&`• امتصاص الماء: ${v.wa}`,v.br&&`• قوة الكسر: ${v.br} نيوتن`,v.mor&&`• معامل الكسر: ${v.mor} نيوتن/مم²`,v.abr&&`• مقاومة التآكل السطحي: فئة ${v.abr}`,v.fr&&"• مقاوم للصقيع والصدمات الحرارية والتشقق","• مقاومة البقع: فئة 3 · الكيماويات المنزلية: فئة B",v.use&&`• الاستخدام: ${v.use}`].filter(Boolean).join("\n"))})}});
   return lines.join("\n\n")}
 function explainProduct(p){const rows=[].concat(p.spec||[],p.full||[]).filter(r=>r&&r[0]&&r[1]);return `🔹 ${p.name}\n`+rows.map(r=>`• ${r[0]}: ${r[1]}`).join("\n")}
+
+/* usage advice: maps common situations to a recommendation grounded in the datasheet values */
+const ADV=[
+ {kw:["حريق","انحراق","احتراق","نار","حراره عاليه","حراره","حرارة","مشب","موقد","شوايه","فرن","fire","heat","burn","fireplace"],f:{src:"por",fin:"matt"},t:"🔥 للأماكن المعرّضة للحرارة أو خطر الاحتراق ننصح بـ البورسلان:\n• البلاط (سيراميك وبورسلان) مادة مشوية على حرارة عالية جدًا، فهو ما يحترق ولا يساعد على انتشار النار.\n• البورسلان حسب الداتا شيت الرسمية: مقاوم للصدمات الحرارية والتشقق (Crazing)، وامتصاصه للماء ≤ 0.5% وقوة كسره ≥ 1300 نيوتن، فيتحمّل الحرارة والتغيّر المفاجئ فيها.\n• الأفضل سماكة 1 سم أو أكثر مع لاصق مناسب للحرارة.\n⚠️ إذا المشروع يحتاج شهادة تصنيف حريق رسمية، تواصل مع فريق المبيعات الخارجية لتزويدك بالمستندات المطلوبة."},
+ {kw:["شمس","خارجي","خارج","حر","outdoor","outside","exterior","حديقه","سطح مكشوف"],f:{src:"por",fin:"matt",slip:true},t:"☀️ للأماكن الخارجية والمعرّضة للشمس والحرارة ننصح بـ بورسلان مطفي ضد الانزلاق (Matt-DRP):\n• مقاوم للصقيع والصدمات الحرارية حسب الداتا شيت، وامتصاص ماء ≤ 0.5%.\n• السطح المطفي يقلل الانزلاق والانعكاس تحت الشمس."},
+ {kw:["رطوبه","رطب","رطبه","مبلل","مبلول","ماء كثير","مويه","wet","humid","moisture","مغسله سيارات","مغسلة سيارات"],f:{src:"por",fin:"matt",slip:true},t:"💧 للأماكن الرطبة ننصح بـ البورسلان المطفي ضد الانزلاق للأرضيات:\n• امتصاص ماء ≤ 0.5% (مجموعة BIa)، فما يتأثر بالرطوبة.\n• للجدران يناسب السيراميك أيضًا (امتصاص 16 ± 2% يساعد على ثبات اللاصق)."},
+ {kw:["حركه عاليه","حركة عالية","تجاري","مول","مستشفى","مدرسه","مطار","مكتب","commercial","heavy traffic","mall","hospital","school","مستودع"],f:{src:"por"},t:"🏢 للأماكن ذات الحركة العالية (تجاري، مستشفيات، مدارس) ننصح بـ البورسلان:\n• مقاومة التآكل السطحي فئة 3–5، وقوة كسر ≥ 1300 نيوتن ومعامل كسر ≥ 35 نيوتن/مم² حسب الداتا شيت.\n• يفضّل المطفي للأرضيات لأنه يخفي آثار الاستخدام ويقلل الانزلاق."},
+ {kw:["انزلاق","كبار السن","اطفال","ضد الزلق","slip","elderly","kids","منزلق"],f:{slip:true},t:"🦶 للحماية من الانزلاق ننصح ببلاط Matt-DRP (مطفي ضد الانزلاق)، خصوصًا في دورات المياه والمداخل والأحواش والدرج."},
+ {kw:["مطبخ","kitchen","زيوت","دهون","بقع","stain"],f:{},t:"🍳 للمطابخ:\n• مقاومة البقع فئة 3 ومقاومة المنظفات والكيماويات المنزلية فئة B حسب الداتا شيت، فتنظيفه سهل.\n• للأرضية بورسلان مطفي، وللجدران سيراميك أو بورسلان لامع لسهولة المسح."},
+ {kw:["مسبح","مسابح","pool"],f:{zone:"pool"},t:"🏊 للمسابح ننصح ببلاط المسابح المخصص مع لاصق المسابح (Saveto Pool أو لاصق المسابح المطوّر من الخزف السعودي)."},
+ {kw:["برد","صقيع","تجمد","frost","cold"],f:{src:"por"},t:"❄️ للأماكن الباردة أو المعرّضة للصقيع ننصح بـ البورسلان: مقاوم للصقيع حسب الداتا شيت الرسمية وامتصاصه للماء ≤ 0.5%."}];
+function advise(o){const q=o.q;const m=ADV.find(x=>x.kw.some(w=>q.includes(N(w))));if(!m)return null;
+  const oo={...o,...Object.fromEntries(Object.entries(m.f).filter(([k])=>o[k]==null||o[k]===false||(Array.isArray(o[k])&&!o[k].length)))};
+  let L=TILES.map(t=>[scoreTile(t,oo,false),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);if(!L.length)L=TILES.map(t=>[scoreTile(t,oo,true),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);
+  return{text:m.t+(L.length?"\n\nهذي خيارات مناسبة من منتجاتنا:":""),items:L.slice(0,8).map(a=>tileX(a[1])),more:L.length>8?L.slice(0,40).map(a=>tileX(a[1])):null}}
 /* answer */
 async function answer(q0){const o=parse(q0);await tileColours();
   if(o.code&&!o.ds){const t=TILES.find(x=>x.code===o.code),p=CAT.find(x=>String(x.code)===o.code);const x=t?tileX(t):p?catX(p):null;return x?{text:"هذا المنتج اللي طلبته:",items:[x]}:{text:"ما لقيت منتج بهذا الكود. تأكد من الرقم أو اكتب اسم المنتج."}}
@@ -1804,6 +1819,8 @@ async function answer(q0){const o=parse(q0);await tileColours();
     if(!L.length)return{text:"ما عندي منتجات بهذا الوصف حاليًا. جرّب تكتبها بطريقة ثانية أو تواصل مع فريق المبيعات."};
     const top=L[0][0],exact=L.filter(a=>a[0]>=top-.5&&a[0]>0);
     const sizes=[...new Set(L.map(a=>szOf(a[1])).filter(Boolean))];return{text:((o.col.length||o.cm||o.lit||o.gal)&&!exact.length?"ما لقيت تطابق كامل، لكن هذي أقرب الخيارات:":`عندنا ${L.length} منتج في هذا القسم`+(sizes.length&&has(o.q,"مقاس","مقاسات","احجام","حجم","size")?`، والمقاسات المتوفرة: ${sizes.slice(0,12).join(" · ")}`:"")+":"),items:L.slice(0,12).map(a=>catX(a[1])),more:L.length>12?L.map(a=>catX(a[1])):null}}
+  {const adv=advise(o);if(adv&&!o.cats.filter(c=>c!=="kitchen").length)return adv}
+  if(o.isTile&&!o.src&&!o.w&&!o.t&&!o.fin&&!o.col.length&&!o.sty.length&&!o.zone&&!o.slip)return{text:"عندنا أكثر من 370 تصميم بلاط 🙂 حدّد لي أكثر عشان أطلع لك الأنسب، مثل:\n• النوع: بورسلان أو سيراميك\n• المقاس: 60×120، 60×60، 30×60…\n• اللون أو الشكل: رخامي، خشبي، بيج، رمادي…\n• مكان الاستخدام: أرضيات، جدران، أحواش، مسابح، خارجي\n• أو اسألني عن مكان معيّن: مكان فيه حرارة، رطوبة، حركة عالية، ضد الانزلاق…"};
   if(o.isTile){let L=TILES.map(t=>[scoreTile(t,o,false),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);let soft=false;
     if(!L.length){L=TILES.map(t=>[scoreTile(t,{...o,t:o.t},true),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);soft=true}
     if(!L.length){const sz=[...new Set(TILES.map(t=>`${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)}`))];return{text:`ما عندنا بلاط بهذه المواصفات. المقاسات المتوفرة: ${sz.slice(0,24).join("، ")}.`}}
