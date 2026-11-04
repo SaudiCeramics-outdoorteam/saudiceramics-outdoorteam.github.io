@@ -587,7 +587,13 @@ const fmt=(n,d=0)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFrac
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const lightbox=document.getElementById("lightbox"),lbImg=document.getElementById("lbImg");
 lightbox.onclick=()=>lightbox.hidden=true;
-function zoom(src,alt){lbImg.src=src;lbImg.alt=alt||"";lightbox.hidden=false}
+function zoom(src,alt){lbImg.src=src;lbImg.alt=alt||"";lightbox.hidden=false;if(window._zNav)_zNav.hidden=true}
+function zoomList(L,alt){if(!L||!L.length)return;if(L.length===1)return zoom(L[0],alt);let i=0;
+  if(!window._zNav){const n=document.createElement("div");n.id="zNav";n.style.cssText="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:6px 10px;z-index:5;font:600 14px var(--body)";
+    n.innerHTML='<button type="button" data-d="1" style="background:#fff;color:#111;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer" aria-label="الصفحة السابقة">›</button><span></span><button type="button" data-d="-1" style="background:#fff;color:#111;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer" aria-label="الصفحة التالية">‹</button>';
+    n.addEventListener("click",e=>e.stopPropagation());lightbox.appendChild(n);window._zNav=n}
+  const show=()=>{lbImg.src=L[i];lbImg.alt=alt||"";lightbox.hidden=false;_zNav.hidden=false;_zNav.querySelector("span").textContent=`${i+1} / ${L.length}`};
+  _zNav.querySelectorAll("button").forEach(b=>b.onclick=e=>{e.stopPropagation();i=(i-(+b.dataset.d)+L.length)%L.length;show()});show()}
 
 /* ---------- cart (shared) ---------- */
 const cart=[],cartEl=document.getElementById("cart"),cartBtn=document.getElementById("cartBtn"),toast=document.getElementById("toast");
@@ -978,14 +984,14 @@ function renderBath(){
   bs.innerHTML=`<img class="photo pimg" title="اضغط للتكبير" alt="${esc(cur.name)}" src="${cur.photo||cur.img}"><h3>${esc(cur.name)}</h3><div class="code">${cur.code}</div>
    <dl>${cur.color?`<dt>اللون</dt><dd>${cur.color}</dd>`:""}${cur.spec.concat((cur.full||[]).filter(r=>!(cur.color&&/^Colou?r$/.test(r[0])))).map(([a,b])=>`<dt>${a}</dt><dd>${esc(b)}</dd>`).join("")}</dl>
    <div class="qtyrow"><span>الكمية (${cur.unit})</span><div class="stepper"><button type="button" id="bMinus" aria-label="أنقص">−</button><input id="bQty" type="number" min="1" value="${q}" aria-label="الكمية"><button type="button" id="bPlus" aria-label="زد">+</button></div></div>
-   <div class="row"><button class="btn" id="bAdd">${had?"حدّث الكمية بالسلة":"أضف للسلة"}</button>${(cur.ds&&cur.ds.length)||cur.sheet?`<button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button>`:""}</div>`;
+   <div class="row"><button class="btn" id="bAdd">${had?"حدّث الكمية بالسلة":"أضف للسلة"}</button>${(cur.ds&&cur.ds.length)||cur.sheet||(cur.dim&&cur.dim.length)?`<button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button>`:""}</div>`;
   const bq=document.getElementById("bQty");
   document.getElementById("bMinus").onclick=()=>bq.value=Math.max(1,(+bq.value||1)-1);
   document.getElementById("bPlus").onclick=()=>bq.value=(+bq.value||0)+1;
   document.getElementById("bAdd").onclick=()=>{
     cart.filter(i=>i.bcat===bathCat&&i.sp===spaceName("bath")&&i.code!==cur.code&&!["acc","drain","fitting","kitchen"].includes(bathCat)).forEach(i=>cart.splice(cart.indexOf(i),1));
     putCart(Object.assign(catItem(cur,Math.max(1,parseInt(bq.value,10)||1),"الحمام"),{bcat:bathCat}));renderBath()};
-  bs.querySelector(".photo").onclick=()=>zoom(cur.photo||cur.img,cur.name);const sb=document.getElementById("bSheet");if(sb)sb.onclick=()=>zoom(cur.ds&&cur.ds.length?cur.ds[0]:SHEETS[cur.sheet],cur.name);
+  bs.querySelector(".photo").onclick=()=>zoom(cur.photo||cur.img,cur.name);const sb=document.getElementById("bSheet");if(sb)sb.onclick=()=>zoomList((cur.ds&&cur.ds.length?cur.ds:[SHEETS[cur.sheet]]).filter(Boolean).concat(cur.dim||[]),cur.name);
 }
 function renderBathing(bc,bp,bs){
   const cur=bathSel.bathing,vi=bathVar[cur.id]||0,v=cur.variants[vi];
@@ -1479,8 +1485,7 @@ function buildPages(){
     <div class="prodcap"><div>${it.sp?`<div class="tsize" style="margin:0 0 4px">الغرفة: ${esc(it.sp)}</div>`:""}<span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div>${it.tile?`<div class="tsize">${tSizeFull(it.tile)}${it.tile.cat?` · ${it.tile.cat}`:""}</div>`:""}</div>
     ${window._catMode?"":`<div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div>`}</div></div>`);
     (it.feat||[]).forEach(dSrc=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">Features · المزايا</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="مزايا ${esc(it.name)}" src="${dSrc}"></div></div>`));
-    (it.dim||[]).forEach(dSrc=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">Dimensions · الأبعاد والمقاسات</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="أبعاد ${esc(it.name)}" src="${dSrc}"></div></div>`));
-    if(window._noSheets)return;const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
+    if(window._noSheets)return;const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=(offL||[it._sheet||SHEETS[it.sheet]]).filter(Boolean).concat(it.dim||[]);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
   (window._noSheets?[]:window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
   if(!window._catMode)out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
    <div style="overflow-x:auto"><table><tr><th>المنتج</th><th>المنطقة</th><th>الكمية</th></tr>
