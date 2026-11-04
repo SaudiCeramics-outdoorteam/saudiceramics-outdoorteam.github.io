@@ -287,7 +287,7 @@ const t0=Date.now(),min=matchMedia("(prefers-reduced-motion: reduce)").matches?6
       <h2 id="infoTitle">اختر منطقة</h2>
       <p id="infoText">الواجهة، الحوش، السطح أو المسبح. كل منطقة ستعرض لاحقًا المنتجات المناسبة لها مع المقاسات المتاحة.</p>
       <div class="cats" id="infoCats"></div>
-      <div id="bathBox" hidden><div class="bcats" id="bcats" role="group" aria-label="أقسام الحمام"></div><div class="prods" id="bprods"></div><div class="spec" id="bspec"></div></div>
+      <div id="bathBox" hidden><div class="bcats" id="bcats" role="group" aria-label="أقسام دورة المياه"></div><div class="prods" id="bprods"></div><div class="spec" id="bspec"></div></div>
       <div id="tileBox" hidden></div>
       <div id="prodBox" hidden>
         <div class="prods" id="prods" role="group" aria-label="بلاط الواجهات"></div>
@@ -338,7 +338,7 @@ const ZONES={
   court:{title:"الحوش",text:"الأرضية الأمامية بين البيت والسور. تناسبها منتجات خارجية مقاومة للانزلاق.",cats:["بورسلان أحواش","سيراميك أحواش","مانع انزلاق"],pos:[-10,9,22],target:[0,0,9]},
   roof:{title:"السطح",text:"سقف الدور الأول مع حديد التسليح البارز لغرفة الدرج.",cats:["سيراميك أسطح","بلاط عازل"],pos:[14,20,10],target:[0,7.3,0]},
   pool:{title:"المسبح",text:"حفرة المسبح بجانب البيت، جاهزة للتلبيس.",cats:["سيراميك مسابح","موزاييك","حواف المسبح"],pos:[9.3,6.2,8.6],target:[9.2,-0.9,-0.6]},
-  bath:{title:"الحمام",text:"داخل البيت. اضغط على أي قطعة بالحمام أو اختر القسم من تحت.",cats:[],pos:[74.3,4.1,4.3],target:[70.5,.8,-.5]}
+  bath:{title:"دورة المياه",text:"داخل البيت. اضغط على أي قطعة بدورة المياه أو اختر القسم من تحت.",cats:[],pos:[74.3,4.1,4.3],target:[70.5,.8,-.5]}
 };
 
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -990,7 +990,7 @@ function renderBath(){
   document.getElementById("bPlus").onclick=()=>bq.value=(+bq.value||0)+1;
   document.getElementById("bAdd").onclick=()=>{
     cart.filter(i=>i.bcat===bathCat&&i.sp===spaceName("bath")&&i.code!==cur.code&&!["acc","drain","fitting","kitchen"].includes(bathCat)).forEach(i=>cart.splice(cart.indexOf(i),1));
-    putCart(Object.assign(catItem(cur,Math.max(1,parseInt(bq.value,10)||1),"الحمام"),{bcat:bathCat}));renderBath()};
+    putCart(Object.assign(catItem(cur,Math.max(1,parseInt(bq.value,10)||1),"دورة المياه"),{bcat:bathCat}));renderBath()};
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo||cur.img,cur.name);const sb=document.getElementById("bSheet");if(sb)sb.onclick=()=>zoomList((cur.ds&&cur.ds.length?cur.ds:[SHEETS[cur.sheet]]).filter(Boolean).concat(cur.dim||[]),cur.name);
 }
 function renderBathing(bc,bp,bs){
@@ -1005,7 +1005,7 @@ function renderBathing(bc,bp,bs){
    <div class="row"><button class="btn" id="bAdd">${had&&had.code===v.code?"بالسلة ✓":had?"استبدل بالسلة":"أضف للسلة"}</button><button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button></div>`;
   const vs=document.getElementById("vSel");if(vs)vs.onchange=()=>{bathVar[cur.id]=+vs.value;build.bathing(cur,+vs.value);renderBath()};
   document.getElementById("bAdd").onclick=()=>{cart.filter(i=>i.bcat==="bathing"&&i.sp===spaceName("bath")).forEach(i=>cart.splice(cart.indexOf(i),1));
-    putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,dim:cur.dim||null,zone:"الحمام",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
+    putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,dim:cur.dim||null,zone:"دورة المياه",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
   document.getElementById("bSheet").onclick=()=>zoom(SHEETS["b"+cur.id],cur.title);
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo,cur.title);
 }
@@ -1031,8 +1031,8 @@ const TZ={ // zone → label, default area, which meshes
   court:{label:"الحوش",area:()=>117},
   roof:{label:"السطح",area:()=>184},
   pool:{label:"المسبح",area:()=>51},
-  wall:{label:"جدران الحمام",area:()=>16},
-  floor:{label:"أرضية الحمام",area:()=>8}};
+  wall:{label:"جدران دورة المياه",area:()=>16},
+  floor:{label:"أرضية دورة المياه",area:()=>8}};
 scene.traverse(o=>{if(o.isMesh)o.userData.origMat=o.material});
 bath.traverse(o=>{if(o.isMesh)o.userData.origMat=o.material});
 function zoneMeshes(z){
@@ -1675,6 +1675,142 @@ window.openSearch=()=>{sd.hidden=false;IDX=null;run();setTimeout(()=>inp.focus()
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="srchBtn";b.textContent="🔍 بحث عن منتج";b.style.cssText="right:auto;left:12px;top:132px";b.onclick=window.openSearch;document.querySelector(".stagewrap").appendChild(b)}
 }
 
+
+/* ---------- smart assistant (rule-based, free): understands type/size/thickness/finish/colour/style and suggests products or a full bathroom set ---------- */
+{
+const N=t=>String(t||"").toLowerCase().replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[ًٌٍَُِّْـ]/g,"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[،,؟?!.:;()]/g," ").replace(/\s+/g," ").trim();
+const has=(q,...w)=>w.some(x=>q.includes(N(x)));
+/* colour words -> key */
+const COL={white:["ابيض","بيضاء","white","ثلجي"],black:["اسود","سوداء","black","نيرو","nero"],grey:["رمادي","رماديه","grey","gray","سكني","فضي"],beige:["بيج","beige","كريمي","كريم","cream","رملي","sand","عاجي"],brown:["بني","brown","خشبي","خشب","wood","بلوط","oak","جوزي"],gold:["ذهبي","gold","نحاسي"],chrome:["كروم","chrome","لامع فضي"],light:["فاتح","light","هادي"],dark:["غامق","dark","داكن"]};
+const STY={marble:["رخام","رخامي","marble","calacatta","كلكتا","statuario","carrara","cararra","ماربل"],wood:["خشب","خشبي","wood","oak","باركيه"],stone:["حجر","حجري","stone","limestone","sandstone","travert","ترافرتين","ترافرتينو"],cement:["اسمنت","اسمنتي","cement","concrete","خرساني"]};
+const pick=(q,M)=>Object.keys(M).filter(k=>M[k].some(w=>q.includes(N(w))));
+/* tile colour from its thumbnail (computed once) */
+const TC={};let tcReady=null;
+function tileColours(){if(tcReady)return tcReady;tcReady=Promise.all(TILES.map(t=>new Promise(ok=>{const src=t.thumb||(t._p&&t._p.thumb);if(!src||TC[t.code])return ok();const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=c.height=12;const x=c.getContext("2d");x.drawImage(im,0,0,12,12);const d=x.getImageData(0,0,12,12).data;let r=0,g=0,b=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4;r/=n;g/=n;b/=n;const L=.299*r+.587*g+.114*b,ch=Math.max(r,g,b)-Math.min(r,g,b),k=new Set();
+  if(L>205&&ch<22)k.add("white");if(L<75)k.add("black");if(L<125)k.add("dark");if(L>175)k.add("light");if(ch<14&&L>=75&&L<=205)k.add("grey");if(r>b+10&&L>=140&&ch<70)k.add("beige");if(r>b+18&&L<150&&L>=55)k.add("brown");TC[t.code]=k}catch(e){}ok()};im.onerror=()=>ok();im.src=src}))).catch(()=>0);return tcReady}
+const tName=t=>t.name.replace(/^Ceramic (Wall|Floor) Tile /,"");
+const zoneOf=q=>has(q,"واجه","facade")?"facade":has(q,"حوش","احواش","ساحه","حديقه","court","مدخل")?"court":has(q,"سطح","اسطح","roof")?"roof":has(q,"مسبح","مسابح","pool")?"pool":has(q,"جدار","جدران","حيط","wall")?"wall":has(q,"ارض","ارضيات","ارضيه","floor")?"floor":null;
+function parse(q0){const q=N(q0);const o={q};
+  o.code=(q0.match(/1\d{14}/)||[])[0];
+  const m=q.match(/(\d{2,3}(?:\.\d)?)\s*(?:x|×|\*|في|ب)\s*(\d{2,3}(?:\.\d)?)/);if(m){o.w=Math.min(+m[1],+m[2]);o.h=Math.max(+m[1],+m[2])}
+  const th=q.match(/(\d+(?:\.\d+)?)\s*(مم|ملم|mm|ملي)/)||q.match(/(?:سماكه|سمك|thickness)\s*(\d+(?:\.\d+)?)\s*(سم|cm)?/);if(th){let v=+th[1];if(/مم|ملم|mm|ملي/.test(th[2]||"")||v>3)v=v/10;o.t=v}
+  const cm=!m&&q.match(/(\d{2,3})\s*(سم|cm|سنتي)/);if(cm)o.cm=+cm[1];
+  const lt=q.match(/(\d{2,3})\s*(لتر|liter|l\b)/);if(lt)o.lit=+lt[1];const gl=q.match(/(\d{2,3})\s*(جالون|gallon)/);if(gl)o.gal=+gl[1];
+  o.fin=has(q,"مطفي","مط ","matt","مات")?"matt":has(q,"لامع","polish","بولش","glossy","جلوسي")?"pol":has(q,"لاباتو","lapp")?"lap":null;
+  o.col=pick(q,COL);o.sty=pick(q,STY);o.zone=zoneOf(q);
+  o.src=has(q,"بورسلان","porcelain","بورسلين")?"por":has(q,"سيراميك","ceramic")?"cer":null;
+  o.slip=has(q,"ضد الانزلاق","مانع انزلاق","انزلاق","anti slip","antislip","drp");
+  const C=[["toilet",["كرسي","مرحاض","تواليت","toilet","wc","افرنجي"]],["vanity",["مغسله بدولاب","دولاب","vanity","كاونتر","counter"]],["basin",["مغسله","مغاسل","حوض غسيل","basin","washbasin","sink"]],["mixer",["خلاط مغسله","خلاط","mixer","حنفيه","بطاريه"]],["shower",["دش","شاور","shower","عمود دش"]],["shattaf",["شطاف","shattaf"]],["mirror",["مرايه","مرايا","مراه","مرآة","mirror"]],["bathing",["بانيو","حوض استحمام","حوض قدم","bathtub","tray","جاكوزي"]],["heater",["سخان","heater","مياه ساخنه"]],["drain",["صفايه","تصريف","drain","بالوعه"]],["acc",["اكسسوار","اكسسوارات","مناشف","ورق تواليت","accessor"]],["kitchen",["مطبخ","مجلى","kitchen"]],["fitting",["محبس","سيفون","fitting","valve","فلش"]],["tile",["غراء","لاصق","روبه","adhesive","grout","سليكون"]],["stairs",["درج","سلالم","stairs","درجات"]]];
+  o.cats=C.filter(([k,w])=>w.some(x=>q.includes(N(x)))).map(([k])=>k);
+  if(o.cats.includes("vanity"))o.cats=o.cats.filter(c=>c!=="basin");
+  if(o.cats.includes("mixer")&&has(q,"مطبخ","مجلى"))o.cats=o.cats.filter(c=>c!=="mixer");
+  o.isTile=!!(o.src||o.w||has(q,"بلاط","بلاطه","سيراميك","بورسلان","tile","tiles","ارضيات","جدران","واجهات","احواش")||o.sty.length&&!o.cats.length);
+  o.theme=has(q,"دوره مياه","دورات مياه","دوره المياه","حمام","بانيو كامل","bathroom","ثيم","تصميم دوره","طقم")&&(o.col.length||o.sty.length||has(q,"تصميم","فكره","ثيم","طقم","كامل"));
+  return o}
+function scoreTile(t,o,soft){let s=0,why=[];const tw=Math.min(+t.w,+t.h),th=Math.max(+t.w,+t.h);
+  if(o.w){if(tw===o.w&&th===o.h){s+=6;why.push(`${tw}×${th}`)}else return -1}
+  if(o.t){if(Math.abs(+t.t-o.t)<.05){s+=3;why.push(`${t.t} سم`)}else if(!soft)return -1}
+  if(o.src){if(t.src===o.src)s+=3;else return -1}
+  const z=t.zones||[];if(o.zone){if(z.includes(o.zone))s+=3;else if(!soft)return -1}
+  const f=String(t.finish||"").toLowerCase();if(o.fin==="matt"){if(f.includes("matt"))s+=2;else if(!soft)return -1}if(o.fin==="pol"){if(f.includes("polish"))s+=2;else if(!soft)return -1}if(o.fin==="lap"){if(f.includes("lapp"))s+=2;else return -1}
+  if(o.slip){if(f.includes("drp"))s+=3;else if(!soft)return -1}
+  const nm=N(t.name);o.sty.forEach(k=>{if(STY[k].some(w=>nm.includes(N(w)))){s+=3;why.push({marble:"رخامي",wood:"خشبي",stone:"حجري",cement:"إسمنتي"}[k])}else s-=2});
+  const k=TC[t.code]||new Set();o.col.forEach(c=>{if(k.has(c)||COL[c].some(w=>nm.includes(N(w)))){s+=2.5}else s-=1.5});
+  return s+Math.random()*.01}
+function scoreCat(p,o){let s=0;const nm=N(p.name+" "+(p.color||"")+" "+JSON.stringify(p.spec||[]));
+  o.col.forEach(c=>{if(COL[c].some(w=>nm.includes(N(w))))s+=3;else s-=1});
+  if(o.fin==="matt"&&nm.includes("مطفي"))s+=1;
+  if(o.cm&&new RegExp("(^|\\D)"+o.cm+"(\\D|$)").test(p.name+" "+JSON.stringify(p.spec||[])))s+=4;
+  if(o.lit&&new RegExp("(^|\\D)"+o.lit+"(\\D|$)").test(p.name))s+=4;if(o.gal&&new RegExp("(^|\\D)"+o.gal+"(\\D|$)").test(p.name))s+=4;
+  const words=N(o.q).split(" ").filter(w=>w.length>2);words.forEach(w=>{if(N(p.name).includes(w))s+=.6});
+  return s}
+const catOf=p=>p.cat==="basin"?"vanity":p.cat;
+const tileX=t=>({k:"tile",o:t,name:tName(t),code:t.code,img:t.thumb||(t._p&&t._p.thumb),sub:`${t.cat||""} · ${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)} سم · ${t.t} سم · ${t.finish||""}`});
+const catX=p=>({k:"cat",o:p,name:p.name,code:p.code,img:p.img,sub:[(BCATS.find(b=>b[0]===catOf(p))||[0,""])[1],p.color].filter(Boolean).join(" · ")});
+async function apply(x,bath){if(x.k==="tile"){const t=x.o,z=t.zones||[];
+    if(bath&&(z.includes("floor")||z.includes("wall"))){select("bath");try{await applyTile(bath,t)}catch(e){}}
+    else if(z.includes("floor")||z.includes("wall")){select("living");livingCat="lall";await applyTile("lall",t);try{renderTiles(document.getElementById("tileBox"),"lall")}catch(e){}}
+    else{const zz=["facade","court","roof","pool"].find(q=>z.includes(q));select(zz);await applyTile(zz,t);try{renderTiles(document.getElementById("tileBox"),zz)}catch(e){}}}
+  else if(x.k==="bathing"){select("bath");bathCat="bathing";bathSel.bathing=x.o;bathVar[x.o.id]=0;build.bathing(x.o,0);renderBath()}
+  else{const p=x.o,c=catOf(p);select("bath");bathCat=c;bathSel[c]=p;try{build[c](p)}catch(e){}renderBath()}
+  try{syncNav(selected)}catch(e){}}
+function itemFor(x){if(x.k==="tile"){const t=x.o;return{code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:"كتالوج",qty:0,unit:"",spec:tileSpec(t)}}
+  if(x.k==="bathing"){const m=x.o,v=m.variants[0];return{code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,dim:m.dim||null,zone:"كتالوج",qty:0,unit:"",spec:[["المقاس",v.label]].concat(m.spec)}}
+  return catItem(x.o,0,"كتالوج")}
+function exportList(L){const list=L.map(itemFor);const dk=[...new Set(list.filter(i=>i.tile).map(i=>dsKey(i.tile)))];
+  openExport({noItems:false,dsKeys:dk,run:async(mode,lang)=>{if(mode==="profile"||mode==="pq")return exportPdf(mode,lang);if(mode==="ds")return exportPdf("ds",lang,dk);
+    const saved=cart.splice(0,cart.length);cart.push(...list.map(i=>({...i})));window._catMode=true;
+    try{await Promise.all(cart.filter(i=>i.tile).map(async i=>{const r=await pageImg(i.tile);i.photo=r.photo||i.photo;i._sheet=r.sheet;i._ds=await officialDS(i.tile)}));window._guide=null;pages=buildPages();await exportPdf(mode,lang)}
+    finally{cart.splice(0,cart.length,...saved);window._catMode=false;try{renderCart()}catch(e){}}}});track("المساعد: تصدير "+L.length)}
+/* answer */
+async function answer(q0){const o=parse(q0);await tileColours();
+  if(o.code){const t=TILES.find(x=>x.code===o.code),p=CAT.find(x=>String(x.code)===o.code);const x=t?tileX(t):p?catX(p):null;return x?{text:"هذا المنتج اللي طلبته:",items:[x]}:{text:"ما لقيت منتج بهذا الكود. تأكد من الرقم أو اكتب اسم المنتج."}}
+  if(o.theme){const bc=o.col.filter(c=>!["light","dark"].includes(c));const set=[];const used=new Set();
+    const best=(cat,extra)=>{const L=CAT.filter(p=>catOf(p)===cat);if(!L.length)return null;const oo={...o,col:extra||bc};return L.map(p=>[scoreCat(p,oo),p]).sort((a,b)=>b[0]-a[0])[0][1]};
+    ["toilet","vanity","mixer","shower","shattaf","mirror","acc","drain"].forEach(c=>{const p=best(c);if(p&&!used.has(p.code)){used.add(p.code);set.push(catX(p))}});
+    const tileO={...o,w:null,h:null,t:null,zone:null,src:o.src};const tcol=o.col.filter(c=>["white","black","grey","beige","brown","light","dark"].includes(c));
+    const tb=(zone,colz)=>TILES.filter(t=>(t.zones||[]).includes(zone)).map(t=>[scoreTile(t,{...tileO,zone,col:colz,sty:o.sty.length?o.sty:[]},true),t]).filter(a=>a[0]>-1).sort((a,b)=>b[0]-a[0]);
+    const wt=tb("wall",tcol.length?tcol:["light"])[0],ft=tb("floor",tcol.length?tcol.concat(["dark"]).slice(0,2):["grey"])[0];
+    const tiles=[];if(wt)tiles.push({...tileX(wt[1]),bath:"wall",role:"بلاط الجدران"});if(ft)tiles.push({...tileX(ft[1]),bath:"floor",role:"بلاط الأرضية"});
+    return{text:`جهّزت لك تصميم دورة مياه متكامل${o.col.length?" باللون اللي طلبته":""}${o.sty.length?" وبالستايل المطلوب":""}. تقدر تطبّقه كامل على البيت أو تصدّره كتالوج:`,items:tiles.concat(set),theme:true}}
+  if(o.cats.length&&!o.isTile||o.cats.some(c=>!["stairs"].includes(c))&&o.cats.length){const c0=o.cats[0];
+    if(c0==="bathing"){const L=BATHING.map(m=>({k:"bathing",o:m,name:m.title||m.id,code:m.variants[0].code,img:m.img,sub:m.variants.map(v=>v.label).join(" · ")}));const f=L.filter(x=>o.cm?x.sub.includes(String(o.cm)):true);return{text:"هذي خيارات البانيو وأحواض القدم:",items:(f.length?f:L).slice(0,8)}}
+    if(c0==="stairs"){const L=STAIRS.map(s=>({k:"stairs",o:s,name:s.name,code:s.tread,img:s.treads[0],sub:"بلاط الدرج · 32×120"}));return{text:"هذي خيارات بلاط الدرج:",items:L.slice(0,8)}}
+    const L=CAT.filter(p=>o.cats.includes(catOf(p))||o.cats.includes(p.cat)).map(p=>[scoreCat(p,o),p]).sort((a,b)=>b[0]-a[0]);
+    if(!L.length)return{text:"ما عندي منتجات بهذا الوصف حاليًا. جرّب تكتبها بطريقة ثانية أو تواصل مع فريق المبيعات."};
+    const top=L[0][0],exact=L.filter(a=>a[0]>=top-.5&&a[0]>0);
+    return{text:(o.col.length||o.cm||o.lit||o.gal)&&!exact.length?"ما لقيت تطابق كامل، لكن هذي أقرب الخيارات:":"هذي الخيارات المناسبة لطلبك:",items:L.slice(0,8).map(a=>catX(a[1]))}}
+  if(o.isTile){let L=TILES.map(t=>[scoreTile(t,o,false),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);let soft=false;
+    if(!L.length){L=TILES.map(t=>[scoreTile(t,{...o,t:o.t},true),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);soft=true}
+    if(!L.length){const sz=[...new Set(TILES.map(t=>`${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)}`))];return{text:`ما عندنا بلاط بهذه المواصفات. المقاسات المتوفرة: ${sz.slice(0,24).join("، ")}.`}}
+    const why=[o.src&&(o.src==="por"?"بورسلان":"سيراميك"),o.w&&`${o.w}×${o.h}`,o.t&&`${o.t} سم`,o.fin&&{matt:"مطفي",pol:"لامع",lap:"لاباتو"}[o.fin],o.zone&&{floor:"أرضيات",wall:"جدران",facade:"واجهات",court:"أحواش",roof:"أسطح",pool:"مسابح"}[o.zone],o.slip&&"ضد الانزلاق"].filter(Boolean);
+    return{text:`${soft?"ما لقيت تطابق كامل، هذي أقرب الخيارات":"لقيت "+L.length+" خيار"}${why.length?" ("+why.join(" · ")+")":""}. اختر اللي يعجبك وشوفه على البيت:`,items:L.slice(0,10).map(a=>tileX(a[1])),more:L.length>10?L.slice(0,40).map(a=>tileX(a[1])):null}}
+  return{text:"ما فهمت طلبك تمامًا 🙂 اكتب نوع المنتج ومواصفاته، مثل:\n• بلاط بورسلان 60×120 مطفي بيج للأرضيات\n• مغسلة بدولاب 80 سم\n• دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح\n• سخان 50 لتر\n• أو اكتب كود المنتج"}}
+/* UI */
+const ad=document.createElement("div");ad.id="aiDlg";ad.hidden=true;ad.setAttribute("role","dialog");ad.setAttribute("aria-label","المساعد الذكي");
+ad.innerHTML=`<div class="abox"><div class="xhead"><h3>💬 المساعد الذكي</h3><button class="x" type="button" id="aClose" aria-label="إغلاق">×</button></div>
+<div id="aLog" aria-live="polite"></div>
+<div id="aSug"></div>
+<form id="aForm"><input id="aIn" type="text" placeholder="اكتب طلبك… مثال: بلاط 60×120 مطفي بيج" autocomplete="off"><button class="btn" type="submit">إرسال</button></form></div>`;
+document.body.appendChild(ad);
+{const css=document.createElement("style");css.textContent=`#aiDlg{position:fixed;inset:0;z-index:79;background:rgba(10,12,16,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px}#aiDlg[hidden]{display:none}
+#aiDlg .abox{background:var(--solid);color:var(--fg);border-radius:16px;padding:14px;width:min(640px,100%);height:min(86vh,760px);display:flex;flex-direction:column;gap:8px}
+#aiDlg .xhead{display:flex;justify-content:space-between;align-items:center}#aiDlg h3{margin:0;font:600 18px var(--display)}
+#aLog{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px}
+.am{max-width:92%;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-line}.am.u{align-self:flex-start;background:var(--accent);color:#fff;border-bottom-right-radius:4px}.am.b{align-self:flex-end;background:var(--accent-soft);border-bottom-left-radius:4px;width:92%}
+.ar{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}.ac{background:#fff;color:#1d2329;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.ac img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.ac b{font-size:12px;padding:4px 6px 0;display:block}.ac small{font-size:10.5px;color:#5b6470;padding:0 6px;display:block}.ac em{font-style:normal;font-size:10.5px;color:#00843d;padding:0 6px;font-weight:600}
+.ac .r{display:flex;gap:4px;padding:6px;margin-top:auto}.ac .r button{flex:1;font-size:11px;padding:6px 4px;border-radius:6px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}.ac .r button.on{background:var(--accent);color:#fff}
+.aa{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.aa button{font-size:13px;padding:8px 12px;border-radius:999px;border:0;background:var(--accent);color:#fff;cursor:pointer}.aa button.g{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+#aSug{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}#aSug button{flex:none;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+#aForm{display:flex;gap:6px}#aIn{flex:1;font-size:16px;padding:10px 12px}`;document.head.appendChild(css)}
+const log=ad.querySelector("#aLog"),inp=ad.querySelector("#aIn");
+const SUG=["بلاط بورسلان 60×120 مطفي بيج للأرضيات","دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح","بلاط خشبي للأرضيات","مغسلة بدولاب 80 سم","بلاط ضد الانزلاق للأحواش","بلاط مسابح","سخان 50 لتر","خلاط ذهبي"];
+ad.querySelector("#aSug").innerHTML=SUG.map(s=>`<button type="button">${s}</button>`).join("");ad.querySelectorAll("#aSug button").forEach(b=>b.onclick=()=>send(b.textContent));
+function msg(cls,html){const d=document.createElement("div");d.className="am "+cls;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function cards(items,picked){return `<div class="ar">${items.map((x,i)=>`<div class="ac"><img alt="" src="${x.img||""}"><b dir="auto">${esc(x.name)}</b>${x.role?`<em>${esc(x.role)}</em>`:""}<small dir="auto">${esc(x.sub||"")}</small><small dir="ltr">${esc(x.code)}</small><div class="r"><button type="button" data-a="see" data-i="${i}">شوفه</button><button type="button" data-a="pick" data-i="${i}" class="${picked.has(x.code)?"on":""}">${picked.has(x.code)?"✓ مختار":"+ للكتالوج"}</button></div></div>`).join("")}</div>`}
+const chosen=new Map();
+function bind(d,items){d.querySelectorAll(".ac button").forEach(b=>b.onclick=async()=>{const x=items[+b.dataset.i];
+  if(b.dataset.a==="see"){ad.hidden=true;await apply(x,x.bath||null);track("المساعد: عرض "+x.code)}
+  else{if(chosen.has(x.code))chosen.delete(x.code);else chosen.set(x.code,x);b.classList.toggle("on",chosen.has(x.code));b.textContent=chosen.has(x.code)?"✓ مختار":"+ للكتالوج";bar()}})}
+function bar(){let f=ad.querySelector("#aBar");if(!f){f=document.createElement("div");f.id="aBar";f.className="aa";ad.querySelector("#aForm").before(f)}
+  f.innerHTML=chosen.size?`<button type="button" id="aExp">📄 صدّر كتالوج (${chosen.size})</button><button type="button" class="g" id="aClr">مسح الاختيار</button>`:"";
+  if(chosen.size){f.querySelector("#aExp").onclick=()=>exportList([...chosen.values()]);f.querySelector("#aClr").onclick=()=>{chosen.clear();ad.querySelectorAll('.ac button[data-a=pick]').forEach(b=>{b.classList.remove("on");b.textContent="+ للكتالوج"});bar()}}}
+async function send(q){q=(q||"").trim();if(!q)return;inp.value="";msg("u",esc(q));const wait=msg("b","…");track("المساعد: "+q.slice(0,80));
+  let r;try{if(!TILES.length)await new Promise(ok=>setTimeout(ok,800));r=await answer(q)}catch(e){r={text:"صار خطأ بسيط، حاول مرة ثانية."}}
+  wait.innerHTML=esc(r.text);if(r.items&&r.items.length){const box=document.createElement("div");box.innerHTML=cards(r.items,chosen);wait.appendChild(box);bind(box,r.items);
+    const act=document.createElement("div");act.className="aa";
+    act.innerHTML=(r.theme?`<button type="button" data-x="all">✨ طبّق التصميم كامل</button>`:"")+`<button type="button" class="g" data-x="addall">+ أضف الكل للكتالوج</button>`+(r.more?`<button type="button" class="g" data-x="more">عرض المزيد</button>`:"");
+    wait.appendChild(act);
+    act.querySelector('[data-x=addall]').onclick=()=>{r.items.forEach(x=>chosen.set(x.code,x));box.querySelectorAll('.ac button[data-a=pick]').forEach(b=>{b.classList.add("on");b.textContent="✓ مختار"});bar()};
+    const all=act.querySelector('[data-x=all]');if(all)all.onclick=async()=>{ad.hidden=true;for(const x of r.items){try{await apply(x,x.bath||null)}catch(e){}}track("المساعد: تطبيق تصميم دورة مياه")};
+    const mo=act.querySelector('[data-x=more]');if(mo)mo.onclick=()=>{box.innerHTML=cards(r.more,chosen);bind(box,r.more);mo.remove()}}
+  log.scrollTop=log.scrollHeight}
+ad.querySelector("#aForm").onsubmit=e=>{e.preventDefault();send(inp.value)};
+ad.querySelector("#aClose").onclick=()=>ad.hidden=true;ad.onclick=e=>{if(e.target===ad)ad.hidden=true};
+window.openAssistant=()=>{ad.hidden=false;if(!log.children.length)msg("b","هلا فيك 👋 أنا مساعد الخزف السعودي.\nاكتب لي وش تحتاج بالمواصفات (النوع، المقاس، السماكة، اللون، مطفي أو لامع، مكان الاستخدام)، أو اطلب فكرة تصميم دورة مياه بلون معيّن، وأنا أطلع لك الخيارات المناسبة.");tileColours();setTimeout(()=>inp.focus(),60)};
+{const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="aiBtn";b.textContent="💬 المساعد الذكي";b.style.cssText="right:auto;left:12px;top:172px;background:var(--accent);color:#fff";b.onclick=window.openAssistant;document.querySelector(".stagewrap").appendChild(b)}
+}
 
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="pickBtn";b.textContent="📄 تصدير كتالوج";b.style.cssText="right:auto;left:12px;top:92px";b.onclick=window.openPicker;document.querySelector(".stagewrap").appendChild(b)}
 }
