@@ -1536,23 +1536,31 @@ async function saveBlob(blob,filename){
   if(dl){try{await dl.save({filename,data:blob});return true}catch(e){if(e&&e.code==="declined")return false}}
   const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);return true}
 const fname=t=>`${t}-${(CUSTOMER?.name||"الخزف-السعودي").replace(/[\\/:*?"<>|]/g,"")}.pdf`;
-async function exportPdf(mode,lang){ /* mode: ms | ms+pq | profile */
+async function exportPdf(mode,lang,dsKeys){ /* mode: cat | ds | ms | ms+pq | pq | profile */
   if(mode!=="profile"&&mode!=="pq"&&(!window.jspdf||!window.html2canvas)){say("جاري تحميل أداة الـ PDF، حاول بعد ثواني");return false}
   say(mode==="ms"?"جاري تجهيز الملف…":"جاري تجهيز الملف، قد ياخذ دقيقة…");
   try{let blob,name;
     if(mode==="pq"){const parts=[await (await fetch(DOCS.pq[lang])).arrayBuffer()];if(document.getElementById("xFinCk").checked)for(const f of FIN)parts.push(await (await fetch(f)).arrayBuffer());blob=parts.length>1?await mergePdfs(parts):new Blob(parts,{type:"application/pdf"});name=lang==="ar"?"ملف-التأهيل-المسبق-الخزف-السعودي.pdf":"Saudi-Ceramics-PreQualification.pdf"}
+    else if(mode==="ds"){const d=await getChunk("ds_0");const ks=[...new Set(dsKeys||cart.filter(i=>i.tile).map(i=>dsKey(i.tile)))].filter(k=>d[k]&&d[k].length);
+      if(!ks.length){say("ما في داتا شيت رسمية للمقاس المختار");return false}
+      const pdf=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});let n=0;
+      for(const k of ks)for(const src of d[k]){const im=new Image();im.src=src;try{await im.decode()}catch(e){continue}
+        const r=Math.min(210/im.naturalWidth,297/im.naturalHeight),w=im.naturalWidth*r,h=im.naturalHeight*r;if(n++)pdf.addPage();pdf.addImage(src,"JPEG",(210-w)/2,(297-h)/2,w,h)}
+      blob=pdf.output("blob");const sz=ks.map(k=>k.split("|")[1]).filter((v,i,a)=>a.indexOf(v)===i).join("_");name=`داتاشيت-${sz}-الخزف-السعودي.pdf`}
     else if(mode==="profile"){blob=await (await fetch(DOCS.profile[lang])).blob();name=lang==="ar"?"الملف-التعريفي-الخزف-السعودي.pdf":"Saudi-Ceramics-Company-Profile.pdf"}
     else{let pdf;if(mode==="cat"){window._noSheets=true;try{pages=buildPages();pdf=await renderPagesPdf()}finally{window._noSheets=false;pages=buildPages()}}else pdf=await renderPagesPdf();const title=mode==="cat"||window._catMode?"كتالوج":"Material-Submittal";
       if(mode==="ms"||mode==="cat"){blob=pdf.output("blob");name=fname(title)}
       else{const parts=[pdf.output("arraybuffer"),await (await fetch(DOCS.pq[lang])).arrayBuffer()];if(document.getElementById("xFinCk").checked)for(const f of FIN)parts.push(await (await fetch(f)).arrayBuffer());blob=await mergePdfs(parts);name=fname(title+"-PreQualification")}}
     const ok=await saveBlob(blob,name);if(!ok)return false;
-    say("تم حفظ الملف PDF");track(mode==="pq"?"تحميل Pre-Qualification":mode==="profile"?"تحميل الملف التعريفي":mode==="cat"?"تصدير كتالوج فقط":mode==="ms"?"تصدير PDF":"تصدير PDF + Pre-Qualification");
-    if(!window._catMode&&mode!=="profile"&&mode!=="pq"){const l=waLink();const box=document.getElementById("waAfter");if(l&&box){box.querySelector("a").href=l;box.hidden=false}}
+    say("تم حفظ الملف PDF");track(mode==="ds"?"تصدير داتاشيت المقاس":mode==="pq"?"تحميل Pre-Qualification":mode==="profile"?"تحميل الملف التعريفي":mode==="cat"?"تصدير كتالوج فقط":mode==="ms"?"تصدير PDF":"تصدير PDF + Pre-Qualification");
+    if(!window._catMode&&mode!=="profile"&&mode!=="pq"&&mode!=="ds"){const l=waLink();const box=document.getElementById("waAfter");if(l&&box){box.querySelector("a").href=l;box.hidden=false}}
     return true}catch(e){if(!(e&&e.code==="declined"))say("ما قدرنا نجهز الملف، حاول مرة ثانية");return false}}
 /* export choices */
 const xd=document.createElement("div");xd.id="exportDlg";xd.hidden=true;xd.setAttribute("role","dialog");xd.setAttribute("aria-label","خيارات التصدير");
 xd.innerHTML=`<div class="xbox"><div class="xhead"><h3>تصدير الملف</h3><button class="x" type="button" id="xClose" aria-label="إغلاق">×</button></div>
  <label class="xopt"><input type="radio" name="xm" value="cat"><span><b>الكتالوج فقط</b><small>صور المنتجات المختارة ومواصفاتها، بدون الداتا شيت</small></span></label>
+ <label class="xopt"><input type="radio" name="xm" value="ds"><span><b>الداتا شيت للمقاس فقط</b><small>الداتا شيت الرسمية للمقاس والسماكة المختارة، بدون صور المنتجات</small></span></label>
+ <label class="xopt"><input type="radio" name="xm" value="ds"><span><b>الداتا شيت للمقاس فقط</b><small>الداتا شيت الرسمية للمقاس والسماكة المختارة، بدون صور المنتجات</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="ms" checked><span><b>Material Submittal</b><small>صور المنتجات + الداتا شيت + الكميات</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="ms+pq"><span><b>Material Submittal + Pre-Qualification</b><small>الكتالوج ومعه ملف التأهيل المسبق (الملف التعريفي، السجلات، الشهادات، الاعتمادات، المشاريع)</small></span></label>
  <label class="xopt"><input type="radio" name="xm" value="pq"><span><b>Pre-Qualification فقط</b><small>ملف التأهيل المسبق بدون منتجات</small></span></label>
@@ -1567,11 +1575,11 @@ document.body.appendChild(xd);
 .xopt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px;cursor:pointer}.xopt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
 .xopt b{display:block;font-size:14px}.xopt small{color:var(--muted);font-size:12px;line-height:1.5}.xlang{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}`;document.head.appendChild(css)}
 let xLang="ar",xCtx=null;
-const xSync=()=>{const m=xd.querySelector('input[name=xm]:checked').value;document.getElementById("xLang").hidden=m==="ms"||m==="cat";document.getElementById("xFin").hidden=!(m==="ms+pq"||m==="pq")};
+const xSync=()=>{const m=xd.querySelector('input[name=xm]:checked').value;document.getElementById("xLang").hidden=m==="ms"||m==="cat"||m==="ds";document.getElementById("xFin").hidden=!(m==="ms+pq"||m==="pq")};
 xd.querySelectorAll('input[name=xm]').forEach(r=>r.onchange=xSync);
 xd.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{xLang=b.dataset.l;xd.querySelectorAll('[data-l]').forEach(c=>c.setAttribute("aria-pressed",String(c===b)))});
 document.getElementById("xClose").onclick=()=>{xd.hidden=true;if(xCtx&&xCtx.cancel)xCtx.cancel()};
-function openExport(ctx){xCtx=ctx||null;const none=!!(ctx&&ctx.noItems);xd.querySelectorAll('input[name=xm]').forEach(r=>{const prod=["cat","ms","ms+pq"].includes(r.value);r.closest("label").hidden=none&&prod});xd.querySelector('input[value='+(none?'"pq"':'"ms"')+']').checked=true;xSync();xd.hidden=false}
+function openExport(ctx){xCtx=ctx||null;const none=!!(ctx&&ctx.noItems),hasDs=ctx?!!(ctx.dsKeys&&ctx.dsKeys.length):cart.some(i=>i.tile);xd.querySelectorAll('input[name=xm]').forEach(r=>{const prod=["cat","ms","ms+pq"].includes(r.value);r.closest("label").hidden=r.value==="ds"?!hasDs:none&&prod});xd.querySelector('input[value='+(none?(hasDs?'"ds"':'"pq"'):'"ms"')+']').checked=true;xSync();xd.hidden=false}
 document.getElementById("xGo").onclick=async()=>{const m=xd.querySelector('input[name=xm]:checked').value,b=document.getElementById("xGo");b.disabled=true;b.textContent="جاري التجهيز…";
   try{if(xCtx&&xCtx.run)await xCtx.run(m,xLang);else await exportPdf(m,xLang)}finally{b.disabled=false;b.textContent="تصدير";xd.hidden=true;xCtx=null}};
 pdfBtn.onclick=()=>openExport();
@@ -1593,7 +1601,7 @@ document.body.appendChild(pk);
 let cat="cer",size=null,th=null;const sel=new Map();
 const tileImg=t=>t.thumb||(t._p&&t._p.thumb)||"";
 function items(){
-  if(cat==="cer"||cat==="por"||cat==="fac")return TILES.filter(t=>t.src===cat).map(t=>({key:t.code,name:t.name.replace(/^Ceramic (Wall|Floor) Tile /,""),img:tileImg(t),size:`${+t.w}×${+t.h}`,th:t.t,make:()=>({code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:"كتالوج",qty:0,unit:"",spec:tileSpec(t)})}));
+  if(cat==="cer"||cat==="por"||cat==="fac")return TILES.filter(t=>t.src===cat).map(t=>({key:t.code,tile:t,name:t.name.replace(/^Ceramic (Wall|Floor) Tile /,""),img:tileImg(t),size:`${+t.w}×${+t.h}`,th:t.t,make:()=>({code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:"كتالوج",qty:0,unit:"",spec:tileSpec(t)})}));
   if(cat==="stairs")return STAIRS.map(s=>({key:s.tread,name:s.name,img:s.treads[0],size:"32×120",make:()=>({code:s.tread+" · "+s.riser,name:s.name+" · Stair Tread 32×120 + Riser 15×120",color:"",thumb:s.treads[0],photo:s.photo,_sheet:s.sheet,zone:"كتالوج",qty:0,unit:""})}));
   if(cat==="bathing")return BATHING.flatMap(m=>m.variants.map(v=>({key:v.code,name:v.name,img:m.img,make:()=>({code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,zone:"كتالوج",qty:0,unit:"",spec:[["المقاس",v.label]].concat(m.spec)})})));
   return CAT.filter(c=>c.cat===cat).map(p=>({key:p.code,name:p.name,img:p.img,make:()=>catItem(p,0,"كتالوج")}))}
@@ -1612,11 +1620,12 @@ function render(){
   g.querySelectorAll("button").forEach(b=>b.onclick=()=>{const i=L[+b.dataset.n];if(sel.has(i.key))sel.delete(i.key);else sel.set(i.key,i);b.setAttribute("aria-pressed",String(sel.has(i.key)));count()});
   document.getElementById("pkAll").onclick=()=>{const all=L.every(i=>sel.has(i.key));L.forEach(i=>all?sel.delete(i.key):sel.set(i.key,i));render()};
   document.getElementById("pkCount").textContent=`${L.length} منتج`;count()}
-function count(){document.getElementById("pkSel").textContent=sel.size?`محدد ${sel.size} منتج`:"بدون منتجات: تقدر تصدّر Pre-Qualification أو الملف التعريفي";document.getElementById("pkGo").textContent=sel.size?"صدّر الكتالوج":"تصدير ملفات الشركة"}
+function count(){document.getElementById("pkSel").textContent=sel.size?`محدد ${sel.size} منتج`:size?"بدون منتجات: تقدر تصدّر داتا شيت المقاس "+size+" أو ملفات الشركة":"بدون منتجات: تقدر تصدّر Pre-Qualification أو الملف التعريفي، أو اختر مقاس لتصدير الداتا شيت";document.getElementById("pkGo").textContent=sel.size?"صدّر الكتالوج":size?"تصدير الداتا شيت / ملفات الشركة":"تصدير ملفات الشركة"}
 document.getElementById("pkClose").onclick=()=>pk.hidden=true;
 document.getElementById("pkGo").onclick=()=>{
-  openExport({noItems:!sel.size,run:async(mode,lang)=>{
-    if(mode==="profile"||mode==="pq")return exportPdf(mode,lang);if(!sel.size){say("حدد منتجات أول");return}
+  const isT=["cer","por","fac"].includes(cat),dk=[...new Set([...[...sel.values()].filter(i=>i.tile).map(i=>dsKey(i.tile)),...(isT&&size?items().filter(i=>i.size===size&&(!th||i.th===th)).map(i=>dsKey(i.tile)):[])])];
+  openExport({noItems:!sel.size,dsKeys:dk,run:async(mode,lang)=>{
+    if(mode==="profile"||mode==="pq")return exportPdf(mode,lang);if(mode==="ds")return exportPdf("ds",lang,dk);if(!sel.size){say("حدد منتجات أول");return}
     const saved=cart.splice(0,cart.length),list=[...sel.values()].map(i=>i.make());cart.push(...list);window._catMode=true;
     try{await Promise.all(cart.filter(i=>i.tile).map(async i=>{const r=await pageImg(i.tile);i.photo=r.photo||i.photo;i._sheet=r.sheet;i._ds=await officialDS(i.tile)}));
       window._guide=null;pages=buildPages();await exportPdf(mode,lang)}
