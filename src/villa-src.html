@@ -634,7 +634,7 @@ function suggestions(){ // estimates for installing large-format porcelain on a 
     {p:CATby(calc.grout),qty:Math.max(1,Math.ceil(A*.3/20)),why:"تقدير 0.3 كغ/م² بفاصل 3 مم"},
     {p:CATby("130671800000100"),qty:Math.max(1,Math.ceil(A/30)),why:"لفواصل التمدد والزوايا"}];
 }
-function catItem(p,q,zone){return{code:p.code,name:p.name,color:p.color||"",thumb:p.img,photo:p.photo||p.img,zone,qty:q,unit:p.unit,spec:p.spec,full:p.full||[],sheet:p.sheet,ds:p.ds||null}}
+function catItem(p,q,zone){return{code:p.code,name:p.name,color:p.color||"",thumb:p.img,photo:p.photo||p.img,zone,qty:q,unit:p.unit,spec:p.spec,full:p.full||[],sheet:p.sheet,ds:p.ds||null,dim:p.dim||null,feat:p.feat||null}}
 function applyProduct(p){
   current=p;
   if(!p){facadeMeshes.forEach(o=>o.material=zoneMat.facade)}
@@ -999,7 +999,7 @@ function renderBathing(bc,bp,bs){
    <div class="row"><button class="btn" id="bAdd">${had&&had.code===v.code?"بالسلة ✓":had?"استبدل بالسلة":"أضف للسلة"}</button><button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button></div>`;
   const vs=document.getElementById("vSel");if(vs)vs.onchange=()=>{bathVar[cur.id]=+vs.value;build.bathing(cur,+vs.value);renderBath()};
   document.getElementById("bAdd").onclick=()=>{cart.filter(i=>i.bcat==="bathing"&&i.sp===spaceName("bath")).forEach(i=>cart.splice(cart.indexOf(i),1));
-    putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,zone:"الحمام",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
+    putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,dim:cur.dim||null,zone:"الحمام",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
   document.getElementById("bSheet").onclick=()=>zoom(SHEETS["b"+cur.id],cur.title);
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo,cur.title);
 }
@@ -1478,6 +1478,8 @@ function buildPages(){
     out.push(`<div class="prodp"><div class="prodimg"><img alt="${esc(it.name)}" src="${it.photo||it.thumb}"></div>
     <div class="prodcap"><div>${it.sp?`<div class="tsize" style="margin:0 0 4px">الغرفة: ${esc(it.sp)}</div>`:""}<span class="eyebrow">${it.zone} · منتج ${i+1} من ${cart.length}</span><h3>${esc(it.name)}</h3><div class="code">${it.code}${it.color?` · ${it.color}`:""}</div>${it.tile?`<div class="tsize">${tSizeFull(it.tile)}${it.tile.cat?` · ${it.tile.cat}`:""}</div>`:""}</div>
     ${window._catMode?"":`<div class="big"><div><b>${fmt(it.qty)}</b><span>${it.unit}</span></div>${it.sqmPer?`<div><b>${fmt(it.qty*it.sqmPer,2)}</b><span>م²</span></div>`:""}</div>`}</div></div>`);
+    (it.feat||[]).forEach(dSrc=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">Features · المزايا</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="مزايا ${esc(it.name)}" src="${dSrc}"></div></div>`));
+    (it.dim||[]).forEach(dSrc=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">Dimensions · الأبعاد والمقاسات</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="أبعاد ${esc(it.name)}" src="${dSrc}"></div></div>`));
     if(window._noSheets)return;const offL=it._ds&&it._ds.length?it._ds:(it.ds&&it.ds.length?it.ds:null),shL=offL||[it._sheet||SHEETS[it.sheet]].filter(Boolean);shL.forEach((shSrc,k)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">${offL?"Official Datasheet · الداتا شيت الرسمية":"Datasheet · المواصفات الفنية الكاملة"}${shL.length>1?` (${k+1}/${shL.length})`:""}</span><b dir="ltr">${esc(it.name)}</b></div><div class="sheetimg"><img alt="ورقة مواصفات ${esc(it.name)}" src="${shSrc}"></div></div>`))});
   (window._noSheets?[]:window._guide||[]).forEach((g,k,L)=>out.push(`<div class="sheetp"><div class="sheethead"><span class="eyebrow">دليل تركيب البلاط · Tiles Installation Guide${L.length>1?` (${k+1}/${L.length})`:""}</span><b>تعليمات تركيب البلاط</b></div><div class="sheetimg"><img alt="دليل تركيب البلاط" src="${g}"></div></div>`));
   if(!window._catMode)out.push(`<div class="body"><span class="eyebrow">ملخص الطلب${CUSTOMER?` · ${esc(CUSTOMER.name)} · <span dir="ltr">${esc(CUSTOMER.phone)}</span>`:""}</span><h2>الكميات المختارة</h2>
@@ -1602,7 +1604,7 @@ const tileImg=t=>t.thumb||(t._p&&t._p.thumb)||"";
 function items(){
   if(cat==="cer"||cat==="por"||cat==="fac")return TILES.filter(t=>t.src===cat).map(t=>({key:t.code,tile:t,name:t.name.replace(/^Ceramic (Wall|Floor) Tile /,""),img:tileImg(t),size:`${+t.w}×${+t.h}`,th:t.t,make:()=>({code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:"كتالوج",qty:0,unit:"",spec:tileSpec(t)})}));
   if(cat==="stairs")return STAIRS.map(s=>({key:s.tread,name:s.name,img:s.treads[0],size:"32×120",make:()=>({code:s.tread+" · "+s.riser,name:s.name+" · Stair Tread 32×120 + Riser 15×120",color:"",thumb:s.treads[0],photo:s.photo,_sheet:s.sheet,zone:"كتالوج",qty:0,unit:""})}));
-  if(cat==="bathing")return BATHING.flatMap(m=>m.variants.map(v=>({key:v.code,name:v.name,img:m.img,make:()=>({code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,zone:"كتالوج",qty:0,unit:"",spec:[["المقاس",v.label]].concat(m.spec)})})));
+  if(cat==="bathing")return BATHING.flatMap(m=>m.variants.map(v=>({key:v.code,name:v.name,img:m.img,make:()=>({code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,dim:m.dim||null,zone:"كتالوج",qty:0,unit:"",spec:[["المقاس",v.label]].concat(m.spec)})})));
   return CAT.filter(c=>c.cat===cat).map(p=>({key:p.code,name:p.name,img:p.img,make:()=>catItem(p,0,"كتالوج")}))}
 function render(){
   document.getElementById("pkCats").innerHTML=PCATS.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===cat}">${l}</button>`).join("");
