@@ -1699,9 +1699,11 @@ function parse(q0){const q=N(q0);const o={q};
   o.fin=has(q,"مطفي","مط ","matt","مات")?"matt":has(q,"لامع","polish","بولش","glossy","جلوسي")?"pol":has(q,"لاباتو","lapp")?"lap":null;
   o.col=pick(q,COL);o.sty=pick(q,STY);o.zone=zoneOf(q);
   o.src=has(q,"بورسلان","porcelain","بورسلين","procelan","porcelan","porclain","porcelin","porcalin","porselan","بورسلن")?"por":has(q,"سيراميك","ceramic","ceramik","seramic")?"cer":null;
+  if(has(q,"بورسلان","porcelain")&&has(q,"سيراميك","ceramic"))o.src=null;
+  o.ex=has(q,"اشرح","شرح","مواصفات","مميزات","يمتاز","يتميز","ميزه","ميزات","خصائص","وش يميز","الفرق","فرق","وش الفرق","explain","features","properties","specs","difference","compare","قارن","معلومات عن","تفاصيل");
   o.ds=has(q,"داتا شيت","داتاشيت","داتا شييت","datasheet","data sheet","ورقه المواصفات","ورقه مواصفات","المواصفات الفنيه","مواصفات فنيه","spec sheet","specsheet","tds","technical data","specification");
   o.slip=has(q,"ضد الانزلاق","مانع انزلاق","انزلاق","anti slip","antislip","drp");
-  const C=[["toilet",["كرسي","مرحاض","تواليت","toilet","wc","افرنجي"]],["vanity",["مغسله بدولاب","دولاب","vanity","كاونتر","counter"]],["basin",["مغسله","مغاسل","حوض غسيل","basin","washbasin","sink"]],["mixer",["خلاط مغسله","خلاط","mixer","حنفيه","بطاريه"]],["shower",["دش","شاور","shower","عمود دش"]],["shattaf",["شطاف","shattaf"]],["mirror",["مرايه","مرايا","مراه","مرآة","mirror"]],["bathing",["بانيو","حوض استحمام","حوض قدم","bathtub","tray","جاكوزي"]],["heater",["سخان","heater","مياه ساخنه"]],["drain",["صفايه","تصريف","drain","بالوعه"]],["acc",["اكسسوار","اكسسوارات","مناشف","ورق تواليت","accessor"]],["kitchen",["مطبخ","مجلى","kitchen"]],["fitting",["محبس","سيفون","fitting","valve","فلش"]],["tile",["غراء","لاصق","روبه","adhesive","grout","سليكون"]],["stairs",["درج","سلالم","stairs","درجات"]]];
+  const C=[["toilet",["كرسي","كراسي","كرسي حمام","مراحيض","مرحاض","مرحاض","تواليت","toilet","wc","افرنجي"]],["vanity",["مغسله بدولاب","مغاسل بدولاب","دواليب","دولاب","vanity","كاونتر","counter"]],["basin",["مغسله","مغاسل","حوض غسيل","basin","washbasin","sink"]],["mixer",["خلاط مغسله","خلاطات","خلاطات مغسله","خلاط","mixer","حنفيه","بطاريه"]],["shower",["دش","دشات","دوش","شاور","shower","عمود دش"]],["shattaf",["شطاف","شطافات","shattaf"]],["mirror",["مرايه","مرايا","مراه","مرآة","mirror"]],["bathing",["بانيو","بانيوهات","احواض استحمام","حوض استحمام","حوض قدم","bathtub","tray","جاكوزي"]],["heater",["سخان","سخانات","heaters","heater","مياه ساخنه"]],["drain",["صفايه","صفايات","تصريف ارضي","تصريف","drain","بالوعه"]],["acc",["اكسسوار","اكسسوارات","مناشف","ورق تواليت","accessor"]],["kitchen",["مطبخ","مجالي","احواض مطبخ","مجلى","kitchen"]],["fitting",["محبس","سيفون","fitting","valve","فلش"]],["tile",["غراء","لاصق","روبه","adhesive","grout","سليكون"]],["stairs",["درج","سلالم","stairs","درجات"]]];
   o.cats=C.filter(([k,w])=>w.some(x=>q.includes(N(x)))).map(([k])=>k);
   if(o.cats.includes("vanity"))o.cats=o.cats.filter(c=>c!=="basin");
   if(o.cats.includes("mixer")&&has(q,"مطبخ","مجلى"))o.cats=o.cats.filter(c=>c!=="mixer");
@@ -1727,7 +1729,8 @@ function scoreCat(p,o){let s=0;const nm=N(p.name+" "+(p.color||"")+" "+JSON.stri
   return s}
 const catOf=p=>p.cat==="basin"?"vanity":p.cat;
 const tileX=t=>({k:"tile",o:t,name:tName(t),code:t.code,img:t.thumb||(t._p&&t._p.thumb),sub:`${t.cat||""} · ${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)} سم · ${t.t} سم · ${t.finish||""}`});
-const catX=p=>({k:"cat",o:p,name:p.name,code:p.code,img:p.img,sub:[(BCATS.find(b=>b[0]===catOf(p))||[0,""])[1],p.color].filter(Boolean).join(" · ")});
+const szOf=p=>{const r=[].concat(p.spec||[],p.full||[]).find(x=>x&&/المقاس|العرض|السعه|السعة|Size|Dimension/i.test(x[0]));return r?String(r[1]).slice(0,40):""};
+const catX=p=>({k:"cat",o:p,name:p.name,code:p.code,img:p.img,sub:[(BCATS.find(b=>b[0]===catOf(p))||[0,""])[1],szOf(p),p.color].filter(Boolean).join(" · ")});
 async function apply(x,bath){if(x.k==="tile"){const t=x.o,z=t.zones||[];
     if(bath&&(z.includes("floor")||z.includes("wall"))){select("bath");try{await applyTile(bath,t)}catch(e){}}
     else if(z.includes("floor")||z.includes("wall")){select("living");livingCat="lall";await applyTile("lall",t);try{renderTiles(document.getElementById("tileBox"),"lall")}catch(e){}}
@@ -1743,9 +1746,32 @@ function exportList(L){const list=L.map(itemFor);const dk=[...new Set(list.filte
     const saved=cart.splice(0,cart.length);cart.push(...list.map(i=>({...i})));window._catMode=true;
     try{await Promise.all(cart.filter(i=>i.tile).map(async i=>{const r=await pageImg(i.tile);i.photo=r.photo||i.photo;i._sheet=r.sheet;i._ds=await officialDS(i.tile)}));window._guide=null;pages=buildPages();await exportPdf(mode,lang)}
     finally{cart.splice(0,cart.length,...saved);window._catMode=false;try{renderCart()}catch(e){}}}});track("المساعد: تصدير "+L.length)}
+
+/* verified values read from the official datasheets (SCC internal specification sheets) */
+const DSI={"cer|12x24.5|0.9":{wa:"3–6%",mor:"≥ 22",abr:"2–5",use:"بلاط أرضيات (مونوكوتورا)"},"cer|15x90|1.0":{wa:"16 ± 2%",mor:"≥ 15",abr:"2–5"},"cer|30x30|0.9":{wa:"16 ± 2%",mor:"≥ 15",abr:"2–5"},"cer|40x40|1.0":{wa:"16 ± 2%",mor:"≥ 15",abr:"2–5"},"cer|43x43|1.2":{wa:"16 ± 2%",mor:"≥ 15",abr:"2–5"},"cer|50x50|1.4":{wa:"16 ± 2%",mor:"≥ 15",abr:"3–5"},"cer|60x60|1.0":{wa:"16 ± 2%",mor:"≥ 15",abr:"2–5"},"cer|30x60|0.9":{wa:"16 ± 2%",br:"600",mor:"≥ 12",abr:"2–5"},"cer|40x80|1.0":{wa:"16 ± 2%",br:"≥ 800",mor:"≥ 15",abr:"2–5"},"cer|40x80|1.4":{wa:"16 ± 2%",br:"≥ 800",mor:"≥ 15",abr:"2–5"},"cer|60x120|1.0":{wa:"16 ± 2%",br:"600",mor:"≥ 15",abr:"2–5"},"cer|60x60|1.5":{wa:"6–10%",br:"800",mor:"≥ 18",abr:"2–5"},"cer|75x75|1.1":{wa:"16 ± 2%",br:"600",mor:"≥ 15",abr:"2–5"},
+"por|20x120|1.0":{g:"BIa",wa:"≤ 0.5%",br:"≥ 1300",mor:"≥ 35",abr:"3–5",fr:1},"por|30x60|0.9":{g:"BIa",wa:"≤ 0.5%",br:"≥ 1400",mor:"≥ 35",abr:"3–5",fr:1},"por|60x120|1.0":{g:"BIa",wa:"≤ 0.5%",br:"≥ 1300",mor:"≥ 35",abr:"3–5",fr:1},"por|120x120|1.0":{g:"BIa",wa:"≤ 0.5%",abr:"3–5",fr:1},"por|40x80|2.0":{g:"BIa",wa:"≤ 0.5%",abr:"3–5",fr:1},"por|60x60|0.9":{g:"BIa",wa:"≤ 0.5%",abr:"3–5",fr:1},"por|60x60|2.0":{g:"BIa",wa:"≤ 0.5%",abr:"3–5",fr:1}};
+const GEN={por:"🔹 البورسلان (Porcelain) من الخزف السعودي:\n• امتصاص ماء منخفض جدًا ≤ 0.5% (مجموعة BIa حسب ISO 13006)، يعني متانة عالية وما يتأثر بالرطوبة.\n• قوة كسر عالية (≥ 1300 نيوتن في أغلب المقاسات) ومعامل كسر ≥ 35 نيوتن/مم².\n• مقاومة للتآكل السطحي من الفئة 3–5، مناسب للأماكن كثيرة الحركة.\n• مقاوم للصقيع وللصدمات الحرارية والتشقق (Crazing).\n• مقاومة البقع فئة 3 ومقاومة الكيماويات والمنظفات المنزلية فئة B.\n• حواف مشطوفة بدقة (Rectified) للحصول على فواصل رفيعة.\n✅ يناسب: الأرضيات والجدران الداخلية، الأماكن كثيرة الاستخدام، وبعض أنواعه للخارج والأحواش والمسابح.",
+cer:"🔹 السيراميك (Ceramic) من الخزف السعودي:\n• امتصاص ماء 16 ± 2% (أكثر من 10%)، وهذا طبيعي في بلاط الجدران ويساعد على ثبات اللاصق.\n• معامل كسر ≥ 15 نيوتن/مم² في أغلب المقاسات، وقوة كسر 600–800 نيوتن في المقاسات الكبيرة.\n• مقاومة للتآكل السطحي فئة 2–5 حسب التصميم.\n• مقاوم للتشقق (Crazing)، ومقاومة البقع فئة 3، والكيماويات المنزلية فئة B.\n✅ يناسب: الجدران الداخلية (دورات المياه والمطابخ) والأرضيات ذات الحركة الخفيفة والمتوسطة، بتكلفة اقتصادية."};
+function explainTile(o){const lines=[];const sz=o.w?`${o.w}x${o.h}`:null;
+  const srcs=o.src?[o.src]:["por","cer"];
+  if(!o.src&&!sz)lines.push("الفرق بين البورسلان والسيراميك باختصار:\n• البورسلان أقوى وأقل امتصاصًا للماء (≤ 0.5%) ويتحمل الحركة العالية والصقيع.\n• السيراميك أخف وأوفر، امتصاصه أعلى (16 ± 2%) ومناسب أكثر للجدران والأماكن الداخلية.");
+  srcs.forEach(s=>{if(!sz)lines.push(GEN[s]);else{const ks=Object.keys(DSI).filter(k=>k.startsWith(s+"|"+sz+"|")&&(!o.t||Math.abs(+k.split("|")[2]-o.t)<.05));
+    if(!ks.length){const any=TILES.some(t=>t.src===s&&Math.min(+t.w,+t.h)===o.w&&Math.max(+t.w,+t.h)===o.h);if(any)lines.push(`${s==="por"?"بورسلان":"سيراميك"} ${o.w}×${o.h}: تفاصيله موجودة في الداتا شيت الرسمية (اضغط عرض تحت).\n`+GEN[s]);return}
+    ks.forEach(k=>{const v=DSI[k],[_,z,th]=k.split("|");lines.push(`📄 ${s==="por"?"بورسلان":"سيراميك"} ${z.replace("x","×")} · سماكة ${th} سم (من الداتا شيت الرسمية):\n`+[v.g&&`• المجموعة: ${v.g} (حسب ISO 13006)`,v.wa&&`• امتصاص الماء: ${v.wa}`,v.br&&`• قوة الكسر: ${v.br} نيوتن`,v.mor&&`• معامل الكسر: ${v.mor} نيوتن/مم²`,v.abr&&`• مقاومة التآكل السطحي: فئة ${v.abr}`,v.fr&&"• مقاوم للصقيع والصدمات الحرارية والتشقق","• مقاومة البقع: فئة 3 · الكيماويات المنزلية: فئة B",v.use&&`• الاستخدام: ${v.use}`].filter(Boolean).join("\n"))})}});
+  return lines.join("\n\n")}
+function explainProduct(p){const rows=[].concat(p.spec||[],p.full||[]).filter(r=>r&&r[0]&&r[1]);return `🔹 ${p.name}\n`+rows.map(r=>`• ${r[0]}: ${r[1]}`).join("\n")}
 /* answer */
 async function answer(q0){const o=parse(q0);await tileColours();
   if(o.code&&!o.ds){const t=TILES.find(x=>x.code===o.code),p=CAT.find(x=>String(x.code)===o.code);const x=t?tileX(t):p?catX(p):null;return x?{text:"هذا المنتج اللي طلبته:",items:[x]}:{text:"ما لقيت منتج بهذا الكود. تأكد من الرقم أو اكتب اسم المنتج."}}
+  if(o.ex&&!has(o.q,"داتا شيت","داتاشيت","datasheet","data sheet","ورقه المواصفات","ورقه مواصفات","spec sheet","pdf")){
+    let p=o.code?CAT.find(x=>String(x.code)===o.code):null,t=o.code?TILES.find(x=>x.code===o.code):null;
+    if(!p&&!t&&!o.src&&!o.w){const words=N(o.q).split(" ").filter(w=>w.length>2);const c=CAT.map(x=>[words.filter(w=>N(x.name).includes(w)).length,x]).sort((a,b)=>b[0]-a[0])[0];const tt=TILES.map(x=>[words.filter(w=>N(x.name).includes(w)).length,x]).sort((a,b)=>b[0]-a[0])[0];if(tt&&tt[0]>0&&(!c||tt[0]>=c[0]))t=tt[1];else if(c&&c[0]>0&&!o.isTile)p=c[1]}
+    if(p)return{text:explainProduct(p),items:[catX(p)]};
+    if(t){const oo={...o,src:t.src,w:Math.min(+t.w,+t.h),h:Math.max(+t.w,+t.h),t:+t.t};return{text:`${tName(t)} · ${t.finish||""}
+
+`+explainTile(oo),items:[tileX(t)]}}
+    if(o.isTile||o.src||o.w){let ds={};try{ds=await getChunk("ds_0")}catch(e){}const rows=[];const seen=new Set();if(o.w)TILES.filter(t=>Math.min(+t.w,+t.h)===o.w&&Math.max(+t.w,+t.h)===o.h&&(!o.src||t.src===o.src)).forEach(t=>{const k=dsKey(t);if(!seen.has(k)&&ds[k]){seen.add(k);rows.push({kind:"tds",key:k,label:`${t.src==="por"?"بورسلان":"سيراميك"} ${o.w}×${o.h} · ${t.t} سم`,img:t.thumb,pages:ds[k]})}});
+      return{text:explainTile(o)+(rows.length?"\n\nتقدر تشوف الداتا شيت الرسمية هنا:":""),ds:rows.length?rows:null}}}
   if(o.ds){let ds;try{ds=await getChunk("ds_0")}catch(e){ds={}}
     const tRow=t=>{const k=dsKey(t);return{kind:"tds",key:k,label:`${t.src==="por"?"بورسلان":"سيراميك"} ${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)} · ${t.t} سم`,img:t.thumb||(t._p&&t._p.thumb),pages:ds[k]||null}};
     const pRow=p=>({kind:"pds",p,label:p.name,img:p.img,code:p.code,pages:(p.ds&&p.ds.length?p.ds:[SHEETS[p.sheet]]).filter(Boolean).concat(p.dim||[])});
@@ -1758,6 +1784,11 @@ async function answer(q0){const o=parse(q0);await tileColours();
     rows=rows.filter(r=>r.pages&&r.pages.length);
     if(!rows.length)return{text:o.w?`ما عندي داتا شيت رسمية لمقاس ${o.w}×${o.h}${o.src?(o.src==="por"?" بورسلان":" سيراميك"):""}. جرّب مقاس ثاني أو تواصل مع فريق المبيعات.`:"حدد لي المقاس (مثل: داتا شيت بورسلان 60×120) أو اسم المنتج أو الكود، وأطلع لك الداتا شيت."};
     return{text:rows.length===1?"تفضل، هذي الداتا شيت:":`لقيت ${rows.length} داتا شيت:`,ds:rows.slice(0,10)}}
+  if(!o.cats.length&&!o.isTile&&!o.col.length&&!o.sty.length&&has(o.q,"دوره مياه","دورات مياه","دوره المياه","دورات المياه","حمام","حمامات","bathroom","ادوات صحيه","الادوات الصحيه","sanitary")){
+    const order=["toilet","vanity","mixer","shower","shattaf","mirror","acc","drain","fitting","heater"];const items=[];const parts=[];
+    order.forEach(c=>{const L=CAT.filter(p=>catOf(p)===c);if(L.length){parts.push(`${(BCATS.find(b=>b[0]===c)||[0,c])[1]} (${L.length})`);items.push(...L.slice(0,2).map(catX))}});
+    if(BATHING.length)parts.push(`البانيو وأحواض القدم (${BATHING.length})`);
+    return{text:`عندنا لدورات المياه:\n• ${parts.join("\n• ")}\n\nوبلاط الجدران والأرضيات بمقاسات كثيرة. اكتب القسم اللي يهمك (مثل: كراسي، مغاسل بدولاب، خلاطات) أو اطلب تصميم بلون معيّن. هذي عيّنة:`,items}}
   if(o.theme){const bc=o.col.filter(c=>!["light","dark"].includes(c));const set=[];const used=new Set();
     const best=(cat,extra)=>{const L=CAT.filter(p=>catOf(p)===cat);if(!L.length)return null;const oo={...o,col:extra||bc};return L.map(p=>[scoreCat(p,oo),p]).sort((a,b)=>b[0]-a[0])[0][1]};
     ["toilet","vanity","mixer","shower","shattaf","mirror","acc","drain"].forEach(c=>{const p=best(c);if(p&&!used.has(p.code)){used.add(p.code);set.push(catX(p))}});
@@ -1772,12 +1803,15 @@ async function answer(q0){const o=parse(q0);await tileColours();
     const L=CAT.filter(p=>o.cats.includes(catOf(p))||o.cats.includes(p.cat)).map(p=>[scoreCat(p,o),p]).sort((a,b)=>b[0]-a[0]);
     if(!L.length)return{text:"ما عندي منتجات بهذا الوصف حاليًا. جرّب تكتبها بطريقة ثانية أو تواصل مع فريق المبيعات."};
     const top=L[0][0],exact=L.filter(a=>a[0]>=top-.5&&a[0]>0);
-    return{text:(o.col.length||o.cm||o.lit||o.gal)&&!exact.length?"ما لقيت تطابق كامل، لكن هذي أقرب الخيارات:":"هذي الخيارات المناسبة لطلبك:",items:L.slice(0,8).map(a=>catX(a[1]))}}
+    const sizes=[...new Set(L.map(a=>szOf(a[1])).filter(Boolean))];return{text:((o.col.length||o.cm||o.lit||o.gal)&&!exact.length?"ما لقيت تطابق كامل، لكن هذي أقرب الخيارات:":`عندنا ${L.length} منتج في هذا القسم`+(sizes.length&&has(o.q,"مقاس","مقاسات","احجام","حجم","size")?`، والمقاسات المتوفرة: ${sizes.slice(0,12).join(" · ")}`:"")+":"),items:L.slice(0,12).map(a=>catX(a[1])),more:L.length>12?L.map(a=>catX(a[1])):null}}
   if(o.isTile){let L=TILES.map(t=>[scoreTile(t,o,false),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);let soft=false;
     if(!L.length){L=TILES.map(t=>[scoreTile(t,{...o,t:o.t},true),t]).filter(a=>a[0]>=0).sort((a,b)=>b[0]-a[0]);soft=true}
     if(!L.length){const sz=[...new Set(TILES.map(t=>`${Math.min(+t.w,+t.h)}×${Math.max(+t.w,+t.h)}`))];return{text:`ما عندنا بلاط بهذه المواصفات. المقاسات المتوفرة: ${sz.slice(0,24).join("، ")}.`}}
     const why=[o.src&&(o.src==="por"?"بورسلان":"سيراميك"),o.w&&`${o.w}×${o.h}`,o.t&&`${o.t} سم`,o.fin&&{matt:"مطفي",pol:"لامع",lap:"لاباتو"}[o.fin],o.zone&&{floor:"أرضيات",wall:"جدران",facade:"واجهات",court:"أحواش",roof:"أسطح",pool:"مسابح"}[o.zone],o.slip&&"ضد الانزلاق"].filter(Boolean);
     return{text:`${soft?"ما لقيت تطابق كامل، هذي أقرب الخيارات":"لقيت "+L.length+" خيار"}${why.length?" ("+why.join(" · ")+")":""}. اختر اللي يعجبك وشوفه على البيت:`,items:L.slice(0,10).map(a=>tileX(a[1])),more:L.length>10?L.slice(0,40).map(a=>tileX(a[1])):null}}
+  {const words=N(o.q).split(" ").filter(w=>w.length>2&&!["عندكم","موجود","موجوده","ابي","ابغى","اريد","ممكن","وش","شو","ايش","المقاسات","مقاسات"].includes(w));
+    if(words.length){const L=CAT.map(p=>[words.filter(w=>N(p.name+" "+(p.color||"")).includes(w)).length,catX(p)]).concat(TILES.map(t=>[words.filter(w=>N(t.name).includes(w)).length,tileX(t)])).filter(a=>a[0]>0).sort((a,b)=>b[0]-a[0]);
+      if(L.length)return{text:"هذي المنتجات القريبة من طلبك:",items:L.slice(0,10).map(a=>a[1])}}}
   return{text:"ما فهمت طلبك تمامًا 🙂 اكتب نوع المنتج ومواصفاته، مثل:\n• بلاط بورسلان 60×120 مطفي بيج للأرضيات\n• مغسلة بدولاب 80 سم\n• دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح\n• سخان 50 لتر\n• أو اكتب كود المنتج"}}
 /* UI */
 const ad=document.createElement("div");ad.id="aiDlg";ad.hidden=true;ad.setAttribute("role","dialog");ad.setAttribute("aria-label","المساعد الذكي");
@@ -1798,7 +1832,7 @@ document.body.appendChild(ad);
 #aSug{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}#aSug button{flex:none;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
 #aForm{display:flex;gap:6px}#lightbox{z-index:90!important}.adsl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.adr{display:flex;align-items:center;gap:8px;background:#fff;color:#1d2329;border:1px solid var(--line);border-radius:10px;padding:6px}.adr img{width:44px;height:44px;object-fit:contain;flex:none}.adr div{flex:1;min-width:0}.adr b{display:block;font-size:12.5px}.adr small{font-size:11px;color:#5b6470}.adr button{flex:none;font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}#aIn{flex:1;font-size:16px;padding:10px 12px}`;document.head.appendChild(css)}
 const log=ad.querySelector("#aLog"),inp=ad.querySelector("#aIn");
-const SUG=["داتا شيت بورسلان 60×120","بلاط بورسلان 60×120 مطفي بيج للأرضيات","دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح","بلاط خشبي للأرضيات","مغسلة بدولاب 80 سم","بلاط ضد الانزلاق للأحواش","بلاط مسابح","سخان 50 لتر","خلاط ذهبي"];
+const SUG=["وش الفرق بين البورسلان والسيراميك؟","مواصفات بورسلان 60×120","داتا شيت بورسلان 60×120","بلاط بورسلان 60×120 مطفي بيج للأرضيات","دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح","بلاط خشبي للأرضيات","مغسلة بدولاب 80 سم","بلاط ضد الانزلاق للأحواش","بلاط مسابح","سخان 50 لتر","خلاط ذهبي"];
 ad.querySelector("#aSug").innerHTML=SUG.map(s=>`<button type="button">${s}</button>`).join("");ad.querySelectorAll("#aSug button").forEach(b=>b.onclick=()=>send(b.textContent));
 function msg(cls,html){const d=document.createElement("div");d.className="am "+cls;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
 function cards(items,picked){return `<div class="ar">${items.map((x,i)=>`<div class="ac"><img alt="" src="${x.img||""}"><b dir="auto">${esc(x.name)}</b>${x.role?`<em>${esc(x.role)}</em>`:""}<small dir="auto">${esc(x.sub||"")}</small><small dir="ltr">${esc(x.code)}</small><div class="r"><button type="button" data-a="see" data-i="${i}">شوفه</button><button type="button" data-a="pick" data-i="${i}" class="${picked.has(x.code)?"on":""}">${picked.has(x.code)?"✓ مختار":"+ للكتالوج"}</button></div></div>`).join("")}</div>`}
