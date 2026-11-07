@@ -328,6 +328,7 @@ const t0=Date.now(),min=matchMedia("(prefers-reduced-motion: reduce)").matches?6
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
@@ -705,7 +706,7 @@ function renderProducts(){
 
 /* ---------- bathroom (interior) ---------- */
 const BX=70,bath=new THREE.Group();bath.position.set(BX,0,0);bath.visible=false;scene.add(bath);
-const envTex=(()=>{const pm=new THREE.PMREMGenerator(renderer),es=new THREE.Scene();
+const envTex=(()=>{const pm=new THREE.PMREMGenerator(renderer),es=new THREE.Scene();if(THREE.RoomEnvironment)return pm.fromScene(new THREE.RoomEnvironment(),.04).texture;
   es.add(new THREE.Mesh(new THREE.BoxGeometry(12,8,12),new THREE.MeshBasicMaterial({color:0x8d9196,side:THREE.BackSide})));
   const lm=new THREE.MeshBasicMaterial({color:0xffffff});
   [[0,3.9,0,-Math.PI/2,0,8,3],[-5.9,1.5,0,0,Math.PI/2,6,2],[0,1,5.9,0,Math.PI,8,1.2]].forEach(([x,y,z,rx,ry,w,h])=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),lm);m.position.set(x,y,z);m.rotation.set(rx,ry,0);es.add(m)});
@@ -1052,11 +1053,11 @@ async function tileTexture(t){
   const L=Math.max(t.w,t.h),S=Math.min(t.w,t.h),cols=Math.max(1,Math.round(240/L)),rows=Math.max(1,Math.round(240/S));
   const ppc=Math.min(2048/(cols*L),2048/(rows*S)),tw=Math.round(L*ppc),th=Math.round(S*ppc);
   const c=document.createElement("canvas");c.width=cols*tw;c.height=rows*th;const g=c.getContext("2d");
-  g.fillStyle="#bdb7ad";g.fillRect(0,0,c.width,c.height);
+  {const q=document.createElement("canvas");q.width=q.height=8;const qg=q.getContext("2d");qg.drawImage(imgs[0],0,0,8,8);const d=qg.getImageData(0,0,8,8).data;let r=0,gg=0,bb=0;for(let i=0;i<d.length;i+=4){r+=d[i];gg+=d[i+1];bb+=d[i+2]}const n=d.length/4,f=v=>Math.round(v/n*.74+14);g.fillStyle=`rgb(${f(r)},${f(gg)},${f(bb)})`}g.fillRect(0,0,c.width,c.height);
   for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){const im=imgs[(r*cols+k*7+r*3)%imgs.length],x=k*tw,y=r*th;
     g.save();g.translate(x+tw/2,y+th/2);if((r+k)%2)g.rotate(Math.PI);
     const portrait=im.height>im.width*1.05;if(portrait&&tw>th*1.05)g.rotate(Math.PI/2);
-    const dw=portrait&&tw>th*1.05?th:tw,dh=portrait&&tw>th*1.05?tw:th;g.drawImage(im,-dw/2+1,-dh/2+1,dw-2,dh-2);g.restore()}
+    const dw=portrait&&tw>th*1.05?th:tw,dh=portrait&&tw>th*1.05?tw:th;{const ix=im.width*.025,iy=im.height*.025;g.drawImage(im,ix,iy,im.width-2*ix,im.height-2*iy,-dw/2+1,-dh/2+1,dw-2,dh-2)};g.restore()}
   const tx=new THREE.CanvasTexture(c);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.encoding=THREE.sRGBEncoding;tx.anisotropy=8;
   tx.repeat.set(TEX/(cols*L/100),TEX/(rows*S/100));texCache[t.code]=tx;return tx}
 async function applyTile(z,t){
@@ -1846,7 +1847,7 @@ document.body.appendChild(ad);
 .ar{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}.ac{background:#fff;color:#1d2329;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
 .ac img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.ac b{font-size:12px;padding:4px 6px 0;display:block}.ac small{font-size:10.5px;color:#5b6470;padding:0 6px;display:block}.ac em{font-style:normal;font-size:10.5px;color:#00843d;padding:0 6px;font-weight:600}
 .ac .r{display:flex;gap:4px;padding:6px;margin-top:auto}.ac .r button{flex:1;font-size:11px;padding:6px 4px;border-radius:6px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}.ac .r button.on{background:var(--accent);color:#fff}
-.aa{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.aa button{font-size:13px;padding:8px 12px;border-radius:999px;border:0;background:var(--accent);color:#fff;cursor:pointer}.aa button.g{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+.aa{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.aa button{font-size:13px;padding:8px 12px;border-radius:999px;border:0;background:var(--accent);color:#fff;cursor:pointer}.aa button.g{background:#fff;color:var(--accent);border:1px solid var(--accent)}.aa{margin-bottom:8px}.aalt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}.aalt small{width:100%;opacity:.8}.aalt button{font-size:12.5px;padding:7px 11px;border-radius:999px;border:1px solid var(--accent);background:transparent;color:inherit;cursor:pointer}
 #aSug{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}#aSug button{flex:none;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
 #aForm{display:flex;gap:6px}#lightbox{z-index:90!important}.adsl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.adr{display:flex;align-items:center;gap:8px;background:#fff;color:#1d2329;border:1px solid var(--line);border-radius:10px;padding:6px}.adr img{width:44px;height:44px;object-fit:contain;flex:none}.adr div{flex:1;min-width:0}.adr b{display:block;font-size:12.5px}.adr small{font-size:11px;color:#5b6470}.adr button{flex:none;font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}#aIn{flex:1;font-size:16px;padding:10px 12px}`;document.head.appendChild(css)}
 const log=ad.querySelector("#aLog"),inp=ad.querySelector("#aIn");
@@ -1868,15 +1869,18 @@ async function send(q){q=(q||"").trim();if(!q)return;inp.value="";msg("u",esc(q)
     box.querySelectorAll("[data-d]").forEach(b=>b.onclick=async()=>{const d=r.ds[+b.dataset.d];b.disabled=true;b.textContent="…";try{if(d.kind==="tds")await exportPdf("ds","ar",[d.key]);else exportList([catX(d.p)])}finally{b.disabled=false;b.textContent="⬇️ PDF"}});track("المساعد: داتا شيت "+r.ds.length)}
   if(r.items&&r.items.length){const box=document.createElement("div");box.innerHTML=cards(r.items,chosen);wait.appendChild(box);bind(box,r.items);
     const act=document.createElement("div");act.className="aa";
-    act.innerHTML=(r.theme?`<button type="button" data-x="all">✨ طبّق التصميم كامل</button>`:"")+`<button type="button" class="g" data-x="addall">+ أضف الكل للكتالوج</button>`+(r.more?`<button type="button" class="g" data-x="more">عرض المزيد</button>`:"");
-    wait.appendChild(act);
+    act.innerHTML=(r.theme?`<button type="button" data-x="all">👁 جرّب التصميم على دورة المياه</button>`:"")+`<button type="button" class="g" data-x="addall">+ أضف الكل للكتالوج</button>`+(r.more?`<button type="button" class="g" data-x="more">عرض المزيد</button>`:"");
+    if(r.theme){wait.insertBefore(act,box);const alt=document.createElement("div");alt.className="aalt";alt.innerHTML=`<small>جرّب تصميم ثاني:</small>`+THEMES.filter(t=>t!==q).map(t=>`<button type="button">${esc(t)}</button>`).join("");wait.appendChild(alt);alt.querySelectorAll("button").forEach(b=>b.onclick=()=>send(b.textContent))}
+    else wait.appendChild(act);
     act.querySelector('[data-x=addall]').onclick=()=>{r.items.forEach(x=>chosen.set(x.code,x));box.querySelectorAll('.ac button[data-a=pick]').forEach(b=>{b.classList.add("on");b.textContent="✓ مختار"});bar()};
-    const all=act.querySelector('[data-x=all]');if(all)all.onclick=async()=>{ad.hidden=true;for(const x of r.items){try{await apply(x,x.bath||null)}catch(e){}}track("المساعد: تطبيق تصميم دورة مياه")};
+    const all=act.querySelector('[data-x=all]');if(all)all.onclick=async()=>{ad.hidden=true;try{select("bath")}catch(e){}for(const x of r.items){try{await apply(x,x.bath||null)}catch(e){}}try{select("bath")}catch(e){}aiBack(true);track("المساعد: تطبيق تصميم دورة مياه")};
     const mo=act.querySelector('[data-x=more]');if(mo)mo.onclick=()=>{box.innerHTML=cards(r.more,chosen);bind(box,r.more);mo.remove()}}
   log.scrollTop=log.scrollHeight}
 ad.querySelector("#aForm").onsubmit=e=>{e.preventDefault();send(inp.value)};
 ad.querySelector("#aClose").onclick=()=>ad.hidden=true;ad.onclick=e=>{if(e.target===ad)ad.hidden=true};
-window.openAssistant=()=>{ad.hidden=false;if(!log.children.length)msg("b","هلا فيك 👋 أنا مساعد الخزف السعودي.\nاكتب لي وش تحتاج بالمواصفات (النوع، المقاس، السماكة، اللون، مطفي أو لامع، مكان الاستخدام)، أو اطلب فكرة تصميم دورة مياه بلون معيّن، وأنا أطلع لك الخيارات المناسبة.");tileColours();setTimeout(()=>inp.focus(),60)};
+const THEMES=["دورة مياه بيضاء كلاسيك","دورة مياه رمادي مودرن","دورة مياه بيج دافئ","دورة مياه أسود مطفي وبلاط رخامي","دورة مياه بلاط خشبي"];
+function aiBack(on){let b=document.getElementById("aiBack");if(!b){b=document.createElement("button");b.id="aiBack";b.type="button";b.className="homebtn stchip";b.textContent="💬 رجوع للمساعد · جرّب تصميم ثاني";b.style.cssText="right:12px;left:auto;top:auto;bottom:52px;background:var(--accent);color:#fff";b.onclick=()=>{window.openAssistant();setTimeout(()=>{log.scrollTop=log.scrollHeight},50)};document.querySelector(".stagewrap").appendChild(b)}b.hidden=!on}
+window.openAssistant=()=>{aiBack(false);ad.hidden=false;if(!log.children.length)msg("b","هلا فيك 👋 أنا مساعد الخزف السعودي.\nاكتب لي وش تحتاج بالمواصفات (النوع، المقاس، السماكة، اللون، مطفي أو لامع، مكان الاستخدام)، أو اطلب فكرة تصميم دورة مياه بلون معيّن، وأنا أطلع لك الخيارات المناسبة.");tileColours();setTimeout(()=>inp.focus(),60)};
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="aiBtn";b.textContent="💬 المساعد الذكي";b.style.cssText="right:auto;left:12px;top:172px;background:var(--accent);color:#fff";b.onclick=window.openAssistant;document.querySelector(".stagewrap").appendChild(b)}
 }
 
@@ -1992,6 +1996,82 @@ function setFinished(on){FINISHED=on;finishG.visible=on;const facadeTiled=!!curr
   b.onclick=()=>setFinished(!FINISHED);b.className="homebtn stchip";b.style.cssText="right:auto;left:12px";document.querySelector(".stagewrap").appendChild(b)}
 /* interiors: warmer, brighter lamps so rooms read like a design render */
 try{livLight.intensity=1.15;livLight.color.set(0xffe6c4);livLight2.intensity=.5}catch(e){}
+/* ---------- realism v2: colour-true tone mapping, sky + studio reflections, PBR tiles with grout relief, interior shadows, HD photo ---------- */
+{
+const DESK=innerWidth>=760&&!matchMedia("(pointer:coarse)").matches;
+/* Khronos "PBR Neutral" tone mapping: built for product rendering — keeps base colours true instead of ACES' hue shift */
+THREE.ShaderChunk.tonemapping_pars_fragment=THREE.ShaderChunk.tonemapping_pars_fragment.replace("vec3 CustomToneMapping( vec3 color ) { return color; }",
+"vec3 CustomToneMapping( vec3 color ) { color *= toneMappingExposure; float x = min(color.r, min(color.g, color.b)); float off = x < 0.08 ? x - 6.25 * x * x : 0.04; color -= off; float peak = max(color.r, max(color.g, color.b)); if (peak < 0.76) return color; float d = 0.24; float np = 1. - d * d / (peak + d - 0.76); color *= np / peak; float g = 1. - 1. / (0.15 * (peak - np) + 1.); return mix(color, vec3(np), g); }");
+renderer.toneMapping=THREE.CustomToneMapping;renderer.toneMappingExposure=1;
+renderer.physicallyCorrectLights=false;
+/* outdoor image-based light: the same sky the visitor sees, plus a sun hot-spot, prefiltered for reflections */
+const skyEnv=(()=>{const es=new THREE.Scene(),L=h=>new THREE.Color(h).convertSRGBToLinear();
+  const sd=sun.position.clone().normalize();
+  const m=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:{top:{value:L(0x3f78b8)},mid:{value:L(0xc4d8ea)},bot:{value:L(0x9a8a74)},sd:{value:sd}},
+    vertexShader:"varying vec3 d;void main(){d=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
+    fragmentShader:"uniform vec3 top,mid,bot,sd;varying vec3 d;void main(){vec3 n=normalize(d);float h=n.y;vec3 c=h>0.?mix(mid,top,pow(clamp(h*1.4,0.,1.),.6)):mix(mid*.8,bot,clamp(-h*4.,0.,1.));c+=vec3(1.,.93,.82)*pow(max(dot(n,sd),0.),800.)*3.;gl_FragColor=linearToOutputTexel(vec4(c,1.));}"});
+  es.add(new THREE.Mesh(new THREE.SphereGeometry(10,48,24),m));const pm=new THREE.PMREMGenerator(renderer);return pm.fromScene(es,0).texture})();
+scene.environment=skyEnv;
+/* exterior materials made earlier with the bathroom studio map → use the sky instead */
+const outdoorize=root=>root.traverse(o=>{if(!o.isMesh)return;for(const m of [].concat(o.material)){if(m&&m.envMap===envTex){m.envMap=null;m.needsUpdate=true}}});
+const isInside=o=>{for(let p=o;p;p=p.parent)if(p===bath||p===living)return true;return false};
+scene.children.forEach(c=>{if(c!==bath&&c!==living)outdoorize(c)});
+/* lights rebalanced for the sky map (it now does most of the fill the hemisphere used to fake) */
+const LK={out:[.42,1.3],inn:[.34,1]};window.__LK=LK;sun.color.setRGB(1.6,1.48,1.3);
+scene.onBeforeRender=()=>{const k=(bath.visible||living.visible)?LK.inn:LK.out;hemi._raw=hemi.intensity;sun._raw=sun.intensity;hemi.intensity*=k[0];sun.intensity*=k[1]};
+scene.onAfterRender=()=>{hemi.intensity=hemi._raw;sun.intensity=sun._raw};
+sun.shadow.mapSize.set(DESK?4096:2048,DESK?4096:2048);sun.shadow.bias=-.00025;sun.shadow.normalBias=.02;if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
+/* interior: soft contact shadows from the ceiling lamp so fittings sit on the floor instead of floating */
+try{roomLight.castShadow=true;roomLight.shadow.mapSize.set(DESK?1024:512,DESK?1024:512);roomLight.shadow.bias=-.002;roomLight.shadow.radius=4;roomLight.intensity=1.45;roomLight.distance=10;roomLight.decay=1.3}catch(e){}
+try{if(typeof livLight!=="undefined"&&livLight.isPointLight){livLight.castShadow=true;livLight.shadow.mapSize.set(DESK?1024:512,DESK?1024:512);livLight.shadow.bias=-.002}}catch(e){}
+[bath,living].forEach(g=>g&&g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}}));
+const shadowAll=g=>g.traverse(o=>{if(o.isMesh&&!o.material.transparent){o.castShadow=true;o.receiveShadow=true}});
+Object.values(G).forEach(g=>{const add=g.add.bind(g);g.add=(...a)=>{a.forEach(shadowAll);return add(...a)}});
+/* tiles: real PBR — roughness/reflection by finish, grout lines in relief, sharpest texture filtering the GPU allows */
+const MAXAN=renderer.capabilities.getMaxAnisotropy();
+const FIN=t=>{const f=String(t.finish||"").toLowerCase();
+  if(/lapp/.test(f))return{r:.26,e:.7,b:.5};if(/polish/.test(f)&&!/matt/.test(f))return{r:.07,e:1,b:.45};
+  if(/drp/.test(f))return{r:.88,e:.12,b:1.2,grain:1};if(/matt/.test(f))return{r:.6,e:.3,b:.8};return{r:.24,e:.6,b:.6}};
+const _tt=tileTexture;
+tileTexture=async function(t){const tx=await _tt(t);tx.anisotropy=MAXAN;
+  if(false){const src=tx.image,c=document.createElement("canvas");c.width=src.width;c.height=src.height;const g=c.getContext("2d");
+    const L=Math.max(t.w,t.h),S=Math.min(t.w,t.h),cols=Math.max(1,Math.round(240/L)),rows=Math.max(1,Math.round(240/S)),tw=c.width/cols,th=c.height/rows;
+    g.fillStyle="#000";g.fillRect(0,0,c.width,c.height);g.filter="blur(.8px)";g.fillStyle="#fff";
+    for(let r=0;r<rows;r++)for(let k=0;k<cols;k++)g.fillRect(k*tw+1.6,r*th+1.6,tw-3.2,th-3.2);g.filter="none";
+    if(FIN(t).grain){const id=g.getImageData(0,0,c.width,c.height),d=id.data;for(let i=0;i<d.length;i+=4){if(d[i]>200){const v=200+Math.random()*55;d[i]=d[i+1]=d[i+2]=v}}g.putImageData(id,0,0)}
+    const b=new THREE.CanvasTexture(c);b.wrapS=b.wrapT=THREE.RepeatWrapping;b.repeat.copy(tx.repeat);b.anisotropy=MAXAN;tx._bump=b}
+  return tx};
+const tileMat=(t,tx,indoor)=>{const f=FIN(t),m=new THREE.MeshStandardMaterial({map:tx,roughness:f.r,metalness:0,bumpMap:null,bumpScale:tx._bump?f.b*.05:0});
+  m.envMap=indoor?envTex:null;m.envMapIntensity=indoor?f.e*.3:f.e;return m};
+applyTile=async function(z,t){
+  tileSel[z]=t;const ms=zoneMeshes(z);
+  if(!t){if(z==="pool")water.visible=false;ms.forEach(o=>o.material=o.userData.origMat||zoneMat.facade);if(z==="facade"){current=null;scaff.forEach(o=>o.visible=true)}paint();refreshTilePanel();return}
+  refreshTilePanel();
+  try{const tx=await tileTexture(t);if(tileSel[z]!==t)return;
+    const m=tileMat(t,tx,!!TZ[z].grp);ms.forEach(o=>{o.material=m;o.receiveShadow=true});
+    if(z==="facade"){current=t._p||t;scaff.forEach(o=>o.visible=false)}if(z==="pool")water.visible=true;paint()}
+  catch(e){console.log("tileErr",e&&e.message);say("ما قدرنا نحمّل صورة البلاطة، حاول مرة ثانية")}};
+/* pool water: clearer, reflective */
+try{water.material.opacity=.3;water.material.roughness=.02;water.material.metalness=0;water.material.envMapIntensity=1.2;water.material.color.set(0x5fb8d8)}catch(e){}
+/* ---------- HD photo of the current view: supersampled, sharp shadows, saved as JPG ---------- */
+function hdShot(){const W=DESK?3840:2048,c=renderer.domElement,asp=c.clientWidth/c.clientHeight||16/9,w=W,h=Math.round(W/asp),ss=DESK?1.5:1.25;
+  const pr=renderer.getPixelRatio(),ms=sun.shadow.mapSize.x;
+  sun.shadow.mapSize.set(8192,8192);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
+  renderer.setPixelRatio(1);renderer.setSize(Math.round(w*ss),Math.round(h*ss),false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  const sel=selected,hov=hovered;selected=null;hovered=null;try{paint()}catch(e){}
+  renderer.render(scene,camera);
+  const o=document.createElement("canvas");o.width=w;o.height=h;const g=o.getContext("2d");g.imageSmoothingEnabled=true;g.imageSmoothingQuality="high";g.drawImage(c,0,0,w,h);
+  selected=sel;hovered=hov;try{paint()}catch(e){}
+  sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
+  renderer.setPixelRatio(pr);resize();return o.toDataURL("image/jpeg",.93)}
+{const b=document.createElement("button");b.type="button";b.className="homebtn stchip";b.id="hdBtn";b.textContent="📷 صورة HD";b.title="احفظ صورة عالية الدقة للمنظر الحالي";
+  b.style.cssText="right:auto;left:12px;top:auto;bottom:52px";
+  b.onclick=()=>{try{track("صورة HD")}catch(e){}b.disabled=true;b.textContent="⏳ جاري التصوير…";
+    setTimeout(()=>{try{const u=hdShot(),a=document.createElement("a");a.href=u;a.download="الخزف-السعودي-تصميمي.jpg";document.body.appendChild(a);a.click();a.remove();try{say("تم حفظ الصورة بدقة عالية")}catch(e){}}catch(e){try{say("ما قدرنا نصوّر، جرّب مرة ثانية")}catch(_){}}b.disabled=false;b.textContent="📷 صورة HD"},60)};
+  document.querySelector(".stagewrap").appendChild(b)}
+window.__rv={applyTile,TILES:()=>TILES,select,camera,controls,setFinished,zoneList:Object.keys(TZ),renderer,scene,hdShot};
+}
+
 
 /* ---------- "عرض تصميمي": cinematic tour of the customer's finished house, one shot per chosen product ---------- */
 {
