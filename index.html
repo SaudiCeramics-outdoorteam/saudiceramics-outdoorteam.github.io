@@ -1721,7 +1721,8 @@ function stop(){live=false;clearInterval(timer);timer=null;try{zx&&zx.reset()}ca
 sb.onclick=()=>{try{track("فتح سكان الكود")}catch(e){}start()};
 sc.querySelector(".scx").onclick=stop;sc.querySelector(".sccap").onclick=()=>{busy=false;readText()};
 const _cl=sd.querySelector("#sClose").onclick;sd.querySelector("#sClose").onclick=()=>{stop();_cl&&_cl()};
-window.__scanMatch=match;}
+window.__scanMatch=match;
+const _os=window.openSearch;window.openSearch=()=>{inp.value="";_os()};}
 
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="srchBtn";b.textContent="🔍 بحث عن منتج";b.style.cssText="right:auto;left:12px;top:132px";b.onclick=window.openSearch;document.querySelector(".stagewrap").appendChild(b)}
 }
