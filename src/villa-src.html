@@ -1692,13 +1692,13 @@ document.body.appendChild(sc);
 const vid=sc.querySelector("video"),msg=sc.querySelector(".scmsg");let stream=null,zx=null,ocr=null,busy=false,timer=null,live=false;
 const codes=()=>{if(!IDX||IDX.length<10)IDX=index();return IDX};
 /* best product for a run of digits read off the label */
-function match(txt){const L=codes(),runs=(String(txt).replace(/[OoQD]/g,"0").replace(/[Il|]/g,"1").replace(/[Ss]/g,"5").replace(/B/g,"8").match(/\d[\d\s-]{5,}\d/g)||[]).map(r=>r.replace(/\D/g,"")).filter(r=>r.length>=6).sort((a,b)=>b.length-a.length);
+function match(txt){const L=codes(),runs=(String(txt).replace(/[OoQD]/g,"0").replace(/[Il|]/g,"1").replace(/[Ss]/g,"5").replace(/B/g,"8").match(/\d[\d\s-]{5,}\d/g)||[]).map(r=>{let d=r.replace(/\D/g,"").replace(/^0+/,"");if(d.length>15){const m=d.match(/[1-9]\d{14}/);d=m?m[0]:d.slice(-15)}return d}).filter(r=>r.length>=6).sort((a,b)=>b.length-a.length);
   for(const r of runs){let x=L.find(p=>String(p.code)===r);if(x)return x;
     x=r.length>=10&&L.find(p=>String(p.code).includes(r)||r.includes(String(p.code)));if(x)return x;
     if(r.length>=13){let best=null,bd=3;for(const p of L){const c=String(p.code);if(Math.abs(c.length-r.length)>1)continue;let d=0;for(let i=0;i<Math.max(c.length,r.length)&&d<bd;i++)if(c[i]!==r[i])d++;if(d<bd){bd=d;best=p}}if(best)return best}}
   return runs[0]?{raw:runs[0]}:null}
-function found(x,how){stop();try{track("سكان كود: "+(x.code||x.raw)+" ("+how+")")}catch(e){}
-  inp.value=x.code||x.raw;run();if(x.code){const one=res.querySelectorAll("button");if(one.length===1)one[0].click()}}
+function found(x,how){stop();if(!x.code&&x.raw){const m=match(x.raw);if(m)x=m}try{track("سكان كود: "+(x.code||x.raw)+" ("+how+")")}catch(e){}
+  inp.value=x.code||x.raw;run();if(x.code){const one=res.querySelectorAll("button");if(one.length===1)one[0].click()}else sd.querySelector("#sInfo").textContent="الكود "+x.raw+" غير موجود على الموقع حالياً"}
 /* printed digits: crop the guide box, grey + threshold, OCR digits only */
 function grab(){const w=vid.videoWidth,h=vid.videoHeight;if(!w)return null;const c=document.createElement("canvas"),sx=w*.08,sy=h*.36,sw=w*.84,sh=h*.28,k=Math.min(3,1600/sw);
   c.width=sw*k;c.height=sh*k;const g=c.getContext("2d");g.filter="grayscale(1) contrast(1.6)";g.drawImage(vid,sx,sy,sw,sh,0,0,c.width,c.height);return c}
@@ -1714,7 +1714,7 @@ async function start(){sc.hidden=false;live=true;msg.textContent="جاري فت�
   catch(e){msg.textContent="ما قدرنا نفتح الكاميرا — اسمح للمتصفح باستخدامها من الإعدادات";return}
   msg.textContent="وجّه الكاميرا على كود المنتج أو الباركود";
   /* barcodes / QR: continuous */
-  loadJs(ZX).then(()=>{if(!live)return;zx=new ZXing.BrowserMultiFormatReader();zx.decodeFromVideoElementContinuously(vid,(r)=>{if(r&&live){const x=match(r.getText())||{raw:r.getText()};found(x.code?x:{raw:r.getText()},"باركود")}})}).catch(()=>{});
+  loadJs(ZX).then(()=>{if(!live)return;zx=new ZXing.BrowserMultiFormatReader();zx.decodeFromVideoElementContinuously(vid,(r)=>{if(r&&live){const x=match(r.getText())||{raw:r.getText()};found(x,"باركود")}})}).catch(()=>{});
   /* printed numbers: every ~1.5 s while the camera is open */
   timer=setInterval(readText,1500);setTimeout(readText,600)}
 function stop(){live=false;clearInterval(timer);timer=null;try{zx&&zx.reset()}catch(e){}zx=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}vid.srcObject=null;sc.hidden=true}
