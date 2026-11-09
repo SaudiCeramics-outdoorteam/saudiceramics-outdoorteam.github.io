@@ -1674,6 +1674,55 @@ function run(){const q=norm(inp.value);if(!IDX||IDX.length<10)IDX=index();
   res.querySelectorAll("button").forEach(b=>b.onclick=()=>open(L[+b.dataset.i]))}
 inp.oninput=run;sd.querySelector("#sClose").onclick=()=>sd.hidden=true;sd.onclick=e=>{if(e.target===sd)sd.hidden=true};
 window.openSearch=()=>{sd.hidden=false;IDX=null;run();setTimeout(()=>inp.focus(),50)};
+/* ---------- 📷 scan a product code (barcode or printed number) with the camera ---------- */
+{const TJ="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/",ZX="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+const loadJs=u=>new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===u))return ok();const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+const row=document.createElement("div");row.className="srow";inp.replaceWith(row);row.appendChild(inp);
+const sb=document.createElement("button");sb.type="button";sb.id="scanBtn";sb.textContent="📷 سكان";sb.title="صوّر كود المنتج بالكاميرا";row.appendChild(sb);
+const sc=document.createElement("div");sc.id="scanDlg";sc.hidden=true;
+sc.innerHTML=`<div class="scbox"><div class="scview"><video playsinline muted autoplay></video><div class="scframe"></div></div><p class="scmsg" aria-live="polite">وجّه الكاميرا على كود المنتج أو الباركود</p><div class="scbtns"><button type="button" class="sccap">📸 اقرأ الكود</button><button type="button" class="scx">إلغاء</button></div></div>`;
+document.body.appendChild(sc);
+{const css=document.createElement("style");css.textContent=`#searchDlg .srow{display:flex;gap:6px}#searchDlg .srow input{flex:1;min-width:0}#scanBtn{flex:none;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:0 12px;font-size:14px;cursor:pointer}
+#scanDlg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:12px}#scanDlg[hidden]{display:none}
+#scanDlg .scbox{width:min(560px,100%);display:flex;flex-direction:column;gap:10px;color:#fff;text-align:center}
+#scanDlg .scview{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3}#scanDlg video{width:100%;height:100%;object-fit:cover;display:block}
+#scanDlg .scframe{position:absolute;left:8%;right:8%;top:36%;height:28%;border:3px solid #7fd1ff;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+#scanDlg .scmsg{margin:0;font-size:15px;min-height:1.4em}#scanDlg .scbtns{display:flex;gap:8px;justify-content:center}
+#scanDlg .scbtns button{padding:10px 18px;border-radius:999px;font-size:15px;cursor:pointer;border:1px solid #fff}#scanDlg .sccap{background:#fff;color:#111}#scanDlg .scx{background:transparent;color:#fff}`;document.head.appendChild(css)}
+const vid=sc.querySelector("video"),msg=sc.querySelector(".scmsg");let stream=null,zx=null,ocr=null,busy=false,timer=null,live=false;
+const codes=()=>{if(!IDX||IDX.length<10)IDX=index();return IDX};
+/* best product for a run of digits read off the label */
+function match(txt){const L=codes(),runs=(String(txt).replace(/[OoQD]/g,"0").replace(/[Il|]/g,"1").replace(/[Ss]/g,"5").replace(/B/g,"8").match(/\d[\d\s-]{5,}\d/g)||[]).map(r=>r.replace(/\D/g,"")).filter(r=>r.length>=6).sort((a,b)=>b.length-a.length);
+  for(const r of runs){let x=L.find(p=>String(p.code)===r);if(x)return x;
+    x=r.length>=10&&L.find(p=>String(p.code).includes(r)||r.includes(String(p.code)));if(x)return x;
+    if(r.length>=13){let best=null,bd=3;for(const p of L){const c=String(p.code);if(Math.abs(c.length-r.length)>1)continue;let d=0;for(let i=0;i<Math.max(c.length,r.length)&&d<bd;i++)if(c[i]!==r[i])d++;if(d<bd){bd=d;best=p}}if(best)return best}}
+  return runs[0]?{raw:runs[0]}:null}
+function found(x,how){stop();try{track("سكان كود: "+(x.code||x.raw)+" ("+how+")")}catch(e){}
+  inp.value=x.code||x.raw;run();if(x.code){const one=res.querySelectorAll("button");if(one.length===1)one[0].click()}}
+/* printed digits: crop the guide box, grey + threshold, OCR digits only */
+function grab(){const w=vid.videoWidth,h=vid.videoHeight;if(!w)return null;const c=document.createElement("canvas"),sx=w*.08,sy=h*.36,sw=w*.84,sh=h*.28,k=Math.min(3,1600/sw);
+  c.width=sw*k;c.height=sh*k;const g=c.getContext("2d");g.filter="grayscale(1) contrast(1.6)";g.drawImage(vid,sx,sy,sw,sh,0,0,c.width,c.height);return c}
+async function readText(){if(busy||!live)return;busy=true;try{
+  if(!ocr){msg.textContent="جاري تجهيز قارئ الأرقام…";await loadJs(TJ+"tesseract.min.js");
+    ocr=await Tesseract.createWorker("eng",1,{workerPath:TJ+"worker.min.js",corePath:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",langPath:"https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"});
+    await ocr.setParameters({tessedit_char_whitelist:"0123456789 -",tessedit_pageseg_mode:"6"});if(live)msg.textContent="وجّه الكاميرا على كود المنتج أو الباركود"}
+  const c=grab();if(!c||!live)return;const {data}=await ocr.recognize(c);const x=match(data.text);
+  if(x&&x.code)found(x,"رقم");else if(x&&x.raw&&x.raw.length>=12)msg.textContent="قريت "+x.raw+" — قرّب أكثر أو ثبّت الإيباد";}
+ catch(e){msg.textContent="ما قدرنا نقرأ، قرّب الكود من الكاميرا وجرّب مرة ثانية"}finally{busy=false}}
+async function start(){sc.hidden=false;live=true;msg.textContent="جاري فتح الكاميرا…";
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});vid.srcObject=stream;await vid.play()}
+  catch(e){msg.textContent="ما قدرنا نفتح الكاميرا — اسمح للمتصفح باستخدامها من الإعدادات";return}
+  msg.textContent="وجّه الكاميرا على كود المنتج أو الباركود";
+  /* barcodes / QR: continuous */
+  loadJs(ZX).then(()=>{if(!live)return;zx=new ZXing.BrowserMultiFormatReader();zx.decodeFromVideoElementContinuously(vid,(r)=>{if(r&&live){const x=match(r.getText())||{raw:r.getText()};found(x.code?x:{raw:r.getText()},"باركود")}})}).catch(()=>{});
+  /* printed numbers: every ~1.5 s while the camera is open */
+  timer=setInterval(readText,1500);setTimeout(readText,600)}
+function stop(){live=false;clearInterval(timer);timer=null;try{zx&&zx.reset()}catch(e){}zx=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}vid.srcObject=null;sc.hidden=true}
+sb.onclick=()=>{try{track("فتح سكان الكود")}catch(e){}start()};
+sc.querySelector(".scx").onclick=stop;sc.querySelector(".sccap").onclick=()=>{busy=false;readText()};
+const _cl=sd.querySelector("#sClose").onclick;sd.querySelector("#sClose").onclick=()=>{stop();_cl&&_cl()};
+window.__scanMatch=match;}
+
 {const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id="srchBtn";b.textContent="🔍 بحث عن منتج";b.style.cssText="right:auto;left:12px;top:132px";b.onclick=window.openSearch;document.querySelector(".stagewrap").appendChild(b)}
 }
 
