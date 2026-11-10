@@ -252,6 +252,7 @@ header.top{position:relative;inset:auto;display:flex;align-items:center;justify-
 }
 
 @media (max-width:520px){h1{font-size:18px}.stage-tag{display:none}.zones button{padding:7px 10px;font-size:13px}}
+.bsub{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}.bsub[hidden]{display:none}.bsub button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer}.bsub button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 </style>
 
 <div id="intro" aria-hidden="true"><div class="ih ih1"></div><div class="ih ih2"></div><div class="ic"><img class="ilogo" src="img/logo.png" alt="الخزف السعودي"><div class="iteam">فريق المبيعات الخارجية · Outdoor Team</div><div class="iline"></div><div class="iproud">بكل فخر صناعة سعودية<br><span>Proudly Saudi Made</span></div><img class="ismade" src="img/saudimade.png" alt="صناعة سعودية Saudi Made"></div></div>
@@ -978,7 +979,14 @@ function renderBath(){
   if(bathCat==="bwall"||bathCat==="bfloor"||bathCat==="ball"){bp.innerHTML="";bp.className="";renderTiles(bs,{bwall:"wall",bfloor:"floor",ball:"ball"}[bathCat]);return}
   tileHost=null;
   if(bathCat==="bathing"){renderBathing(bc,bp,bs);return}
-  const list=CAT.filter(c=>c.cat===bathCat||(bathCat==="vanity"&&c.cat==="basin")),cur=bathSel[bathCat];
+  const tType=p=>/عربي|الوادي/.test(p.name)?"arab":(p.kind==="wall"||/معلق|wall.?hung/i.test(p.name))?"wall":"floor";
+  let sub=document.getElementById("bsub");if(!sub){sub=document.createElement("div");sub.id="bsub";sub.className="bsub";bp.parentNode.insertBefore(sub,bp)}
+  let list=CAT.filter(c=>c.cat===bathCat||(bathCat==="vanity"&&c.cat==="basin"));const cur=bathSel[bathCat];
+  if(bathCat==="toilet"){const T=[["all","الكل"],["floor","كراسي أرضية"],["wall","كراسي معلقة"],["arab","كراسي عربية"]];window._tSub=window._tSub||"all";
+    sub.hidden=false;sub.innerHTML=T.map(([k,l])=>`<button type="button" data-t="${k}" aria-pressed="${k===window._tSub}">${l} (${k==="all"?list.length:list.filter(p=>tType(p)===k).length})</button>`).join("");
+    sub.querySelectorAll("button").forEach(b=>b.onclick=()=>{window._tSub=b.dataset.t;renderBath()});
+    if(window._tSub!=="all")list=list.filter(p=>tType(p)===window._tSub||p===cur)}
+  else sub.hidden=true;
   bp.innerHTML="";bp.className="prods sq";
   list.forEach(p=>{const b=document.createElement("button");b.setAttribute("aria-pressed",String(p===cur));b.title=p.name+(p.color?" · "+p.color:"");
     b.innerHTML=`<img alt="${esc(p.name)}" src="${p.img}">`;b.onclick=()=>{bathSel[bathCat]=p;build[bathCat](p);renderBath()};bp.appendChild(b)});
