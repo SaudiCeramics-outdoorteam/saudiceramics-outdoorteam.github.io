@@ -253,6 +253,39 @@ header.top{position:relative;inset:auto;display:flex;align-items:center;justify-
 
 @media (max-width:520px){h1{font-size:18px}.stage-tag{display:none}.zones button{padding:7px 10px;font-size:13px}}
 .bsub{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}.bsub[hidden]{display:none}.bsub button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer}.bsub button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* layout v3: tool chips in one bar (never cover the villa on phones), compact phone header, wrapped tabs on wide screens, touch sizes */
+.tools{position:absolute;top:12px;left:12px;z-index:2;display:flex;flex-direction:column;align-items:stretch;gap:8px;pointer-events:none}
+.tools>*{pointer-events:auto}
+.tools .homebtn{position:static!important;white-space:nowrap}
+.spec dd{unicode-bidi:plaintext;text-align:right}
+html[dir="ltr"] .spec dd{text-align:left}
+@media (min-width:861px){
+  .zones{flex-wrap:wrap!important;overflow:visible}.subz{flex-wrap:wrap;overflow:visible}
+}
+@media (min-width:1500px){.side{width:500px}}
+@media (min-width:601px) and (max-width:860px){
+  .stagewrap{flex:0 0 50%}
+  .prods.tgrid{grid-template-columns:repeat(5,1fr)}
+}
+@media (max-width:860px){
+  .zones,.subz{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 34px);mask-image:linear-gradient(to right,transparent 0,#000 34px)}
+  html[dir="ltr"] .zones,html[dir="ltr"] .subz{-webkit-mask-image:linear-gradient(to left,transparent 0,#000 34px);mask-image:linear-gradient(to left,transparent 0,#000 34px)}
+}
+@media (max-width:600px){
+  header.top{flex-wrap:wrap;gap:6px 10px;padding-block:6px}
+  .brandbox{display:contents}
+  .titles{order:3;flex:1 0 100%;text-align:center}
+  .titles h1{font-size:13px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .team{display:none}
+  .stagewrap{flex:0 0 46%}
+  .tools{top:auto;bottom:8px;left:0;right:0;flex-direction:row;align-items:center;gap:6px;overflow-x:auto;padding:2px 10px;scrollbar-width:none;pointer-events:auto}
+  .tools::-webkit-scrollbar{display:none}
+  .tools .homebtn{flex:none;font-size:12.5px;padding:6px 11px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+}
+@media (pointer:coarse){
+  .homebtn{min-height:36px}.zones button{min-height:40px}.subz button{min-height:36px}
+}
 </style>
 
 <div id="intro" aria-hidden="true"><div class="ih ih1"></div><div class="ih ih2"></div><div class="ic"><img class="ilogo" src="img/logo.png" alt="الخزف السعودي"><div class="iteam">فريق المبيعات الخارجية · Outdoor Team</div><div class="iline"></div><div class="iproud">بكل فخر صناعة سعودية<br><span>Proudly Saudi Made</span></div><img class="ismade" src="img/saudimade.png" alt="صناعة سعودية Saudi Made"></div></div>
@@ -2283,3 +2316,8 @@ if(document.body)boot();else addEventListener("DOMContentLoaded",boot);
 window.setLang=set;
 })();
 </script>
+<script>/* layout v3: gather the stage tool chips into one bar */
+(function(){function go(){var w=document.querySelector(".stagewrap");if(!w||w.querySelector(".tools"))return;var t=document.createElement("div");t.className="tools";
+["aiBtn","srchBtn","scChip","finBtn","pickBtn","hdBtn"].forEach(function(id){var b=document.getElementById(id);if(b&&b.parentNode===w)t.appendChild(b)});
+if(t.children.length)w.appendChild(t)}
+if(document.readyState==="complete")setTimeout(go,0);else window.addEventListener("load",function(){setTimeout(go,0)})})();</script>
