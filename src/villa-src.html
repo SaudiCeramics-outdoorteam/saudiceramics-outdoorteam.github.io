@@ -2260,6 +2260,128 @@ window.openShowcase=scOpen;
 {const r=document.querySelector("#houseView .hvbar .row");if(r){const b=document.createElement("button");b.className="btn";b.type="button";b.textContent="اعرض تصميمي 3D";b.onclick=scOpen;r.prepend(b)}}
 }
 
+/* ---------- decor v1: street + neighbours outside, finished shell with whole-house facade scope, furnished living room whose colours follow the tile ---------- */
+{
+const MS=(c,r=.8,x)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r},x||{}));
+const mk=(g,geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;o.userData.pass=true;g.add(o);return o};
+const bx=(g,w,h,d,m,x,y,z)=>mk(g,new THREE.BoxGeometry(w,h,d),m,x,y+h/2,z);
+
+/* ===== 1. street: neighbours, far sidewalk, lamps, hedges, trees, a parked car ===== */
+try{const hood=new THREE.Group();land.add(hood);
+  const winM=MS(0x33424f,.15,{metalness:.35}),frameM=MS(0x2d2f33,.4,{metalness:.5}),doorM=MS(0x5d4230,.55),walkM=MS(0xcfc8bb,.9),curbM=MS(0xe6e1d6,.8),
+    leafM=MS(0x3f6a34,.95),leaf2=MS(0x587f3e,.95),trunkM=MS(0x7a5c40,.95),poleM=MS(0x3a3d41,.5,{metalness:.6}),lampM=MS(0xfff3d6,.4,{emissive:0xffe2a8,emissiveIntensity:.9});
+  const COL=[0xe9e2d3,0xd9cdb8,0xefeae0,0xcfc4b2,0xe3d9c8,0xddd6ca];
+  /* a finished two-storey villa on its own walled plot; face = +1 looks toward +z, -1 toward -z */
+  const VIL=[];const villa=(cx,cz,face,ci)=>{const g=new THREE.Group();g.position.set(cx,0,cz);g.rotation.y=face>0?0:Math.PI;hood.add(g);VIL.push(g);
+    const wallM=MS(COL[ci%COL.length],.85),trimM=MS(COL[(ci+2)%COL.length],.8),W=13,D=10.5;
+    bx(g,W,3.5,D,wallM,0,0,0);bx(g,W-2.5,3.2,D-1.5,wallM,-1.25,3.5,-.75);bx(g,W+.3,.25,D+.3,trimM,0,3.4,0);bx(g,W-2.2,.25,D-1.2,trimM,-1.25,6.7,-.75);
+    [[-4.3,1.2],[4.3,1.2]].forEach(([x,y])=>{bx(g,2,1.4,.08,winM,x,y,D/2+.02);bx(g,2.16,.08,.12,frameM,x,y-.08,D/2+.03)});
+    [[-4.6,4.5],[-.8,4.5],[2.6,4.5]].forEach(([x,y])=>bx(g,1.9,1.5,.08,winM,x,y,D/2-1.48));
+    bx(g,1.3,2.4,.1,doorM,0,0,D/2+.03);bx(g,3,.2,1.6,trimM,0,2.6,D/2+.8);[-1.3,1.3].forEach(x=>bx(g,.22,2.6,.22,trimM,x,0,D/2+1.4));
+    /* plot wall (front with a gate, two sides) */
+    const fw=MS(COL[(ci+1)%COL.length],.9),gate=MS(0x3b3f45,.5,{metalness:.5});
+    bx(g,8.6,2.2,.22,fw,-6.6,0,11.6);bx(g,8.6,2.2,.22,fw,6.6,0,11.6);bx(g,4.5,2,.08,gate,0,0,11.6);
+    bx(g,.22,2.2,21,fw,-10.9,0,1.1);bx(g,.22,2.2,21,fw,10.9,0,1.1);return g};
+  const tree=(x,z,s=1)=>{const g=new THREE.Group();g.position.set(x,0,z);hood.add(g);mk(g,new THREE.CylinderGeometry(.09*s,.13*s,1.8*s,8),trunkM,0,.9*s,0);
+    [[0,2.5,0,1.15],[.55,2.1,.2,.8],[-.5,2.2,-.3,.85]].forEach(([a,b,c,r],i)=>mk(g,new THREE.IcosahedronGeometry(r*s,1),i?leaf2:leafM,a*s,b*s,c*s))};
+  /* side neighbours share our street; a second row faces us across the road */
+  villa(22,.4,1,0);villa(-22,.4,1,3);[-22,0,22].forEach((x,i)=>villa(x,34.9,-1,i+1));
+  bx(hood,80,.1,2.2,walkM,0,.01,22.1);bx(hood,80,.16,.25,curbM,0,.01,20.95);
+  [-15.5,-7.5,8.5,16.5].forEach(x=>{mk(hood,new THREE.CylinderGeometry(.06,.08,5.2,10),poleM,x,2.6,13.7);bx(hood,.08,.08,1.3,poleM,x,5.15,14.3);bx(hood,.26,.08,.5,lampM,x,5.06,14.85)});
+  [-18,-2,14].forEach(x=>{mk(hood,new THREE.CylinderGeometry(.06,.08,5.2,10),poleM,x,2.6,21.4);bx(hood,.08,.08,1.3,poleM,x,5.15,20.8);bx(hood,.26,.08,.5,lampM,x,5.06,20.25)});
+  [[-6.6,7.6],[6.6,7.6]].forEach(([x,w])=>{bx(hood,w,.28,.5,curbM,x,.02,12.42);bx(hood,w-.2,.5,.38,leafM,x,.3,12.42)});
+  [[-27,22.2],[-9,22.2],[9,22.2],[27,22.2],[17,6],[-17,5],[26,-6],[-27,-5]].forEach(([x,z],i)=>tree(x,z,.9+((i*37)%5)/12));
+  /* parked car */
+  {const g=new THREE.Group();g.position.set(-7,0,15.1);hood.add(g);const body=MS(0xe9ebee,.3,{metalness:.5}),tyre=MS(0x1b1c1e,.9);
+    bx(g,4.4,.62,1.8,body,0,.32,0);bx(g,2.4,.55,1.62,winM,-.15,.94,0);bx(g,2.5,.05,1.66,body,-.15,1.49,0);
+    [[-1.4,.9],[1.4,.9],[-1.4,-.9],[1.4,-.9]].forEach(([x,z])=>{const w=mk(g,new THREE.CylinderGeometry(.33,.33,.24,18),tyre,x,.33,z);w.rotation.x=Math.PI/2})}
+  /* a neighbour never hides our house: drop any villa the camera is inside of, or that sits between the camera and the house */
+  hood.updateMatrixWorld(true);VIL.forEach(g=>{g.userData.box=new THREE.Box3().setFromObject(g).expandByScalar(1.5)});
+  const ray=new THREE.Ray(),tgt=new THREE.Vector3(),hit=new THREE.Vector3(),_ob=scene.onBeforeRender;
+  scene.onBeforeRender=function(){_ob&&_ob.apply(this,arguments);const p=camera.position;
+    VIL.forEach(g=>{const b=g.userData.box;let hide=b.containsPoint(p);
+      if(!hide){tgt.set(0,3,0).sub(p);const d=tgt.length();ray.origin.copy(p);ray.direction.copy(tgt).divideScalar(d);const h=ray.intersectBox(b,hit);hide=!!h&&h.distanceTo(p)<d}
+      g.visible=!hide})};
+}catch(e){console.log("hood",e&&e.message)}
+
+/* ===== 2. finished shell + how much of the house the facade tile covers ===== */
+const paintM=MS(0xece6d9,.88),trimM=MS(0xdcd4c4,.85),gateM=MS(0x33373c,.45,{metalness:.55});
+const EX={house:[],fence:[],shell:[]},fin2=new THREE.Group();fin2.visible=false;scene.add(fin2);
+scene.children.forEach(o=>{if(!o.isMesh||scaff.includes(o)||o.userData.zone)return;const p=o.position;
+  if(o.material===blockMat)(Math.abs(p.x)>10.5||p.z>11.5||p.z<-8.5?EX.fence:EX.house).push(o);
+  else if(o.material===concreteMat)EX.shell.push(o)});
+const fb=(w,h,d,x,y,z,grp)=>{const g=new THREE.BoxGeometry(w,h,d);scaleUV(g,w,h,d);const o=new THREE.Mesh(g,paintM);o.position.set(x,y+h/2,z);o.castShadow=o.receiveShadow=true;o.userData.pass=true;o.userData.fin=true;fin2.add(o);EX[grp].push(o);return o};
+/* complete what the shell leaves half-built: first-floor side/back walls, the low boundary wall, roof parapet, stair room */
+fb(.2,H1-1.4,12,7,F1+1.4,0,"house");fb(4.67,H1-.8,.2,-4.665,F1+.8,-6,"house");fb(9.33,H1,.2,2.335,F1,-6,"house");
+fb(.2,1,21,-11,1.2,1.5,"fence");
+fb(14.2,.65,.2,0,ROOF+.35,6,"house");fb(14.2,1,.2,0,ROOF,-6,"house");fb(.2,1,11.8,7,ROOF,0,"house");fb(.2,1,11.8,-7,ROOF,0,"house");
+fb(3,2.6,.2,-5.5,ROOF,-6,"house");fb(.2,2.6,3,-7,ROOF,-4.5,"house");fb(3,2.6,.2,-5.5,ROOF,-3,"house");fb(.2,2.6,1.7,-4,ROOF,-5.15,"house");
+{const d=bx(fin2,.06,2.1,.9,MS(0x5d4230,.55),-4,ROOF,-3.6);d.userData.fin=false}
+/* sliding gate in the boundary wall */
+[-1,1].forEach(s=>{bx(fin2,1.96,2,.06,gateM,s*.99,.06,12);for(let i=0;i<5;i++)bx(fin2,1.9,.03,.09,trimM,s*.99,.35+i*.38,12)});
+const faceArea=o=>{const p=o.geometry.parameters,a=[p.width,p.height,p.depth].sort((x,y)=>y-x);return a[0]*a[1]};
+const A0=FACADE_AREA,AH=EX.house.reduce((s,o)=>s+faceArea(o),0),AF=EX.fence.reduce((s,o)=>s+faceArea(o),0);
+let SCOPE="all";try{SCOPE=localStorage.getItem("scc-fscope")||"all"}catch(e){}
+const SC=[["all","كل البيت والسور"],["house","البيت بدون السور"],["front","الواجهة الأمامية فقط"]];
+function shell(){const fin=FINISHED,t=tileSel.facade,m=t&&facadeMeshes[0]?facadeMeshes[0].material:null;
+  fin2.visible=fin;
+  const set=(L,on)=>L.forEach(o=>{o.material=m&&on?m:fin||o.userData.fin?paintM:blockMat});
+  set(EX.house,SCOPE!=="front");set(EX.fence,SCOPE==="all");
+  EX.shell.forEach(o=>o.material=fin?trimM:concreteMat);
+  if(!m)facadeMeshes.forEach(o=>o.material=fin?paintM:(o.userData.origMat||zoneMat.facade));
+  FACADE_AREA=A0+(SCOPE!=="front"?AH:0)+(SCOPE==="all"?AF:0)}
+const _sf=setFinished;setFinished=function(on){_sf(on);shell()};
+const _rt=renderTiles;renderTiles=function(host,z){_rt(host,z);if(z!=="facade"||host.querySelector("#fscope"))return;
+  const d=document.createElement("div");d.id="fscope";d.className="grt";d.style.cssText="margin:0 0 10px;display:block";
+  d.innerHTML=`<span style="display:block;margin-bottom:6px">بلاط الواجهة يتركّب على:</span><div class="chips">${SC.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===SCOPE}">${l}</button>`).join("")}</div>`;
+  host.prepend(d);d.querySelectorAll("button").forEach(b=>b.onclick=()=>{SCOPE=b.dataset.k;try{localStorage.setItem("scc-fscope",SCOPE)}catch(e){}const s=zstate("facade");s.area=null;s.boxes=null;shell();refreshTilePanel()})};
+
+/* ===== 3. living room: furnished, and its colours follow the tile ===== */
+const DEC={};
+const MSI=(c,r,x)=>MS(c,r,Object.assign({envMapIntensity:.08},x||{}));
+try{const g=living;const fabric=c=>MSI(c,.92),woodm=c=>MSI(c,.55);
+  DEC.rug=fabric(0xe7dfd0);DEC.acc=fabric(0x7a8c6a);DEC.cur=fabric(0xf3efe7);DEC.wood=[];DEC.art=[MSI(0x7a8c6a,.8),MSI(0xd9c7a3,.8),MSI(0x8c8273,.8)];
+  living.traverse(o=>{if(o.isMesh&&o.material&&o.material.color&&o.material.color.getHex()===0x3c2e25&&!DEC.wood.includes(o.material))DEC.wood.push(o.material)});
+  const w0=woodm(0x3c2e25);DEC.wood.push(w0);const blk=MSI(0x2b2b2d,.5,{metalness:.4}),white=MSI(0xf4f1ea,.7),potM=MSI(0xd8d2c6,.7),leafM=MSI(0x4d7a45,.85);
+  /* rug under the coffee table, with a border */
+  bx(g,2.9,.012,2.0,DEC.acc,LX0+2.35,.001,LZ0+3.45);bx(g,2.7,.016,1.8,DEC.rug,LX0+2.35,.001,LZ0+3.45);
+  /* accent cushions on the sofa */
+  [[LX0+.62,LZ0+2.42,.25],[LX0+2.5,LZ0+2.42,-.25],[LX0+.6,LZ0+4.0,.2]].forEach(([x,z,r])=>{const c=bx(g,.42,.42,.14,DEC.acc,x,.58,z);c.rotation.set(-.25,r>0&&z>LZ0+3?Math.PI/2:0,r*.4)});
+  /* armchair facing the sofa + floor lamp */
+  {const ax=LX0+4.55,az=LZ0+3.5;bx(g,.85,.4,.85,sofa,ax,0,az);bx(g,.16,.5,.85,sofa,ax+.345,.4,az);bx(g,.69,.3,.14,sofa,ax-.08,.4,az-.355);bx(g,.69,.3,.14,sofa,ax-.08,.4,az+.355);bx(g,.62,.12,.6,cush,ax-.1,.4,az);
+    const lx=ax+.2,lz=az-1.0;mk(g,new THREE.CylinderGeometry(.16,.18,.03,20),blk,lx,.015,lz);mk(g,new THREE.CylinderGeometry(.015,.015,1.5,8),blk,lx,.78,lz);
+    mk(g,new THREE.CylinderGeometry(.16,.22,.3,20,1,true),MSI(0xf3eadb,.6,{emissive:0xffe2b0,emissiveIntensity:.55,side:THREE.DoubleSide}),lx,1.62,lz)}
+  /* things on the coffee table */
+  bx(g,.34,.04,.24,DEC.acc,LX0+2.05,.44,LZ0+3.35);bx(g,.3,.03,.22,white,LX0+2.06,.48,LZ0+3.36);mk(g,new THREE.CylinderGeometry(.07,.05,.22,14),white,LX0+2.65,.55,LZ0+3.5);
+  mk(g,new THREE.IcosahedronGeometry(.13,1),leafM,LX0+2.65,.76,LZ0+3.5);
+  /* big plant in the corner + a small one by the door */
+  const plant=(x,z,s)=>{mk(g,new THREE.CylinderGeometry(.2*s,.15*s,.42*s,16),potM,x,.21*s,z);mk(g,new THREE.CylinderGeometry(.02*s,.03*s,.7*s,6),MSI(0x6b5238,.9),x,.75*s,z);
+    for(let i=0;i<7;i++){const a=i/7*Math.PI*2,l=mk(g,new THREE.SphereGeometry(.26*s,10,8),leafM,x+Math.cos(a)*.22*s,(1.0+(i%3)*.22)*s,z+Math.sin(a)*.22*s);l.scale.set(1,.45,.6);l.rotation.set(.5,a,.4)}};
+  plant(LX0+.5,LZ0+4.8,1.25);plant(LX0+1.25,LZ0+.4,.8);
+  /* curtains + rod at the window */
+  bx(g,.03,.03,2.3,blk,LX0+.12,2.62,LZ0+2.2);[LZ0+1.22,LZ0+3.18].forEach(z=>{for(let i=0;i<4;i++)bx(g,.06,2.5,.1,DEC.cur,LX0+.1+(i%2)*.03,.1,z-.15+i*.1)});
+  /* framed art on the left wall above the sofa, and one beside the door */
+  const frame=(x,y,z,w,h,ax,am)=>{const o=ax==="x"?[.03,h,w]:[w,h,.03];bx(g,o[0],o[1],o[2],blk,x,y,z);const i=ax==="x"?[.035,h-.1,w-.1]:[w-.1,h-.1,.035];bx(g,i[0],i[1],i[2],white,x,y+.05,z);
+    const k=ax==="x"?[.04,h*.45,w*.5]:[w*.5,h*.45,.04];bx(g,k[0],k[1],k[2],am,x,y+h*.3,z)};
+  frame(LX0+.02,1.35,LZ0+3.45,.7,.9,"x",DEC.art[0]);frame(LX0+.02,1.35,LZ0+4.35,.7,.9,"x",DEC.art[1]);frame(LX0+.8,1.3,LZ0+.02,.8,1.0,"z",DEC.art[2]);
+}catch(e){console.log("decor",e&&e.message)}
+/* palettes: light floors get deeper furniture, dark floors get light furniture; warm/cool follows the tile */
+const PAL={dark:{sofa:0xe6dfd2,cush:0xf4efe6,acc:0xb0703c,wood:0xc8a67a,rug:0xefe9de,cur:0xf3efe7},
+  midW:{sofa:0xefe9dd,cush:0xd8cdb8,acc:0x76885f,wood:0x5a4030,rug:0xe9e1d2,cur:0xf5f1e8},midC:{sofa:0xe9ecee,cush:0xcfd6db,acc:0x33506b,wood:0x3a3530,rug:0xdfe3e6,cur:0xf1f3f4},
+  liteW:{sofa:0x8c8273,cush:0xe9e1d2,acc:0xa8683f,wood:0x4a3526,rug:0xb9a88f,cur:0xe9e1d2},liteC:{sofa:0x5c646e,cush:0xe8eaec,acc:0x2f4a66,wood:0x2e2a27,rug:0x9aa2a9,cur:0xe6e9ec},
+  base:{sofa:0xb9b2a6,cush:0xd9d3c8,acc:0x7a8c6a,wood:0x3c2e25,rug:0xe7dfd0,cur:0xf3efe7}};
+async function restyle(){let p=PAL.base;const t=tileSel.lall||tileSel.lfloor||tileSel.lwall;
+  if(t){try{const tx=await tileTexture(t),c=document.createElement("canvas");c.width=c.height=8;const x=c.getContext("2d");x.drawImage(tx.image,0,0,8,8);const d=x.getImageData(0,0,8,8).data;let r=0,gn=0,b=0;
+      for(let i=0;i<d.length;i+=4){r+=d[i];gn+=d[i+1];b+=d[i+2]}r/=16320;gn/=16320;b/=16320;const L=.2126*r+.7152*gn+.0722*b,warm=r-b>.035;
+      p=L<.36?PAL.dark:L<.64?(warm?PAL.midW:PAL.midC):(warm?PAL.liteW:PAL.liteC)}catch(e){}}
+  try{sofa.color.setHex(p.sofa);cush.color.setHex(p.cush);DEC.acc.color.setHex(p.acc);DEC.rug.color.setHex(p.rug);DEC.cur.color.setHex(p.cur);DEC.wood.forEach(m=>m.color.setHex(p.wood));
+    DEC.art[0].color.setHex(p.acc);DEC.art[1].color.setHex(p.rug);DEC.art[2].color.setHex(p.sofa)}catch(e){}}
+const _at=applyTile;applyTile=async function(z,t){const r=await _at(z,t);
+  try{if(z==="facade"){if(t&&!FINISHED)setFinished(true);else shell();if(tileZone==="facade")refreshTilePanel()}
+    if(TZ[z]&&(TZ[z].grp==="living"))restyle()}catch(e){}return r};
+try{window.__rv.applyTile=applyTile;window.__rv.setFinished=setFinished}catch(e){}
+shell();
+}
 /* ---------- favourites, compare two products, same design in other sizes, deep zoom, share-design link ---------- */
 {
 const css=document.createElement("style");css.textContent=`.fbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}.fbar button{font:500 12.5px var(--body);color:var(--fg);background:var(--solid);border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer;min-height:34px}
