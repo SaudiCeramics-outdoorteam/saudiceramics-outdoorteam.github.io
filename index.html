@@ -640,7 +640,7 @@ function putCart(item){
   renderCart();clearTimeout(window._trT);window._trT=setTimeout(()=>track("تحديث السلة"),15000);
 }
 let inCart=code=>cart.find(i=>i.code===code);
-function itemLine(it){return `${fmt(it.qty)} ${it.unit}${it.sqmPer?` · ${fmt(it.qty*it.sqmPer,2)} م²`:""}`}
+function itemLine(it){return `${it.sqmPer?`${fmt(it.qty*it.sqmPer,2)} م² · `:""}${fmt(it.qty)} ${it.unit}`}
 function renderCart(){
   document.getElementById("cartCount").textContent=cart.length;
   const ul=document.getElementById("cartList");ul.innerHTML="";
@@ -1161,7 +1161,7 @@ function renderTiles(host,z){tileHost=host;tileZone=z;
    <div class="calc"><h4>حساب الكمية</h4><div class="fields">
      <label for="tArea">مساحة ${TZ[z].label} (م²)<input id="tArea" type="number" min="1" step="0.5" inputmode="decimal" value="${s.area??TZ[z].area()}"></label>
      <label for="tWaste">نسبة الهالك<select id="tWaste">${[5,10,15].map(w=>`<option value="${w}" ${w===s.waste?"selected":""}>${w}%</option>`).join("")}</select></label></div>
-     <div class="qtyrow"><span>عدد الكراتين</span><div class="stepper"><button type="button" id="tMinus" aria-label="أنقص">−</button><input id="tBoxes" type="number" min="1" inputmode="numeric" aria-label="عدد الكراتين"><button type="button" id="tPlus" aria-label="زد">+</button></div></div>
+     <div class="qtyrow"><span>الكمية (م²)</span><div class="stepper"><button type="button" id="tMinus" aria-label="أنقص">−</button><input id="tBoxes" type="number" min="0" step="any" inputmode="decimal" aria-label="الكمية بالمتر المربع" style="width:84px"><button type="button" id="tPlus" aria-label="زد">+</button></div></div>
      <div class="result" id="tResult"></div></div>
    <div class="row"><button class="btn" id="tAdd">${had?"حدّث الكمية بالسلة":"أضف للسلة"}</button><button class="btn ghost" type="button" id="tSheet">ورقة المواصفات</button></div>
    <div class="sugg"><h4>مكملات التركيب المقترحة</h4><div class="grt"><span>اللاصق</span><select id="tAdh">${ADHESIVES.map(a=>`<option value="${a.code}">${esc(a.name)}</option>`).join("")}</select></div>
@@ -1177,12 +1177,12 @@ function renderTiles(host,z){tileHost=host;tileZone=z;
   const drawSug=()=>{const L=sugg();document.getElementById("tSug").innerHTML=L.map((x,i)=>`<li><img alt="" src="${x.p.img}"><div><span dir="ltr">${esc(x.p.name)}</span><small>${fmt(x.qty)} ${x.p.unit} · ${x.why}</small></div><button class="btn ghost sm" data-i="${i}">${inCart(x.p.code)?"✓":"أضف"}</button></li>`).join("");
     document.querySelectorAll("#tSug button").forEach(b=>b.onclick=()=>{const x=sugg()[+b.dataset.i];putCart(catItem(x.p,x.qty,TZ[z].label));drawSug()})};
   const tB=document.getElementById("tBoxes");
-  const upd=()=>{const q=tqty(z,cur);tB.value=q.boxes;
-    document.getElementById("tResult").innerHTML=`<b>${fmt(q.sqm,2)} م²</b> · ${fmt(q.kg)} كغ · ${fmt(q.pallets,1)} طبلية<br><span>${s.boxes==null?`المقترح: المساحة + ${s.waste}% هالك، مقرّب لأقرب كرتون.`:`المقترح ${fmt(q.sug)} كرتون. <button type="button" class="link" id="tReset">رجّع للمقترح</button>`}</span>`;
+  const upd=()=>{const q=tqty(z,cur);tB.value=+q.sqm.toFixed(2);
+    document.getElementById("tResult").innerHTML=`<b>${fmt(q.sqm,2)} م²</b> = ${fmt(q.boxes)} كرتون · ${fmt(q.kg)} كغ · ${fmt(q.pallets,1)} طبلية<br><span>${s.boxes==null?`المقترح: المساحة + ${s.waste}% هالك، مقرّب لأقرب كرتون كامل.`:`المقترح ${fmt(q.sug*(parseFloat(cur.pack.sqm)||1),2)} م². <button type="button" class="link" id="tReset">رجّع للمقترح</button>`}</span>`;
     const r=document.getElementById("tReset");if(r)r.onclick=()=>{s.boxes=null;upd()};drawSug()};
   document.getElementById("tArea").oninput=e=>{const v=parseFloat(e.target.value);s.area=v>0?v:null;s.boxes=null;upd()};
   document.getElementById("tWaste").onchange=e=>{s.waste=+e.target.value;s.boxes=null;upd()};
-  tB.oninput=()=>{const v=parseInt(tB.value,10);if(v>0){s.boxes=v;upd()}};
+  tB.onchange=()=>{const v=parseFloat(tB.value);if(v>0){s.boxes=Math.max(1,Math.ceil(v/(parseFloat(cur.pack.sqm)||1)-1e-6));upd()}else upd()};
   document.getElementById("tMinus").onclick=()=>{s.boxes=Math.max(1,tqty(z,cur).boxes-1);upd()};
   document.getElementById("tPlus").onclick=()=>{s.boxes=tqty(z,cur).boxes+1;upd()};
   gS.onchange=()=>{s.grout=gS.value;drawSug()};
@@ -1722,7 +1722,7 @@ function run(){const q=norm(inp.value);if(!IDX||IDX.length<10)IDX=index();
   sd.querySelector("#sInfo").textContent=L.length?`${L.length}${L.length===60?"+":""} نتيجة`:"ما لقينا منتج بهذا الاسم أو الكود";
   res.innerHTML=L.map((x,i)=>`<button type="button" data-i="${i}"><img alt="" src="${x.img||""}"><span><b dir="auto">${esc(x.name)}</b><small dir="auto">${esc(x.code)} · ${esc(x.sub)}</small></span></button>`).join("");
   res.querySelectorAll("button").forEach(b=>b.onclick=()=>open(L[+b.dataset.i]))}
-inp.oninput=run;sd.querySelector("#sClose").onclick=()=>sd.hidden=true;sd.onclick=e=>{if(e.target===sd)sd.hidden=true};
+window.__idx=()=>{if(!IDX||IDX.length<10)IDX=index();return IDX};window.__open=open;inp.oninput=run;sd.querySelector("#sClose").onclick=()=>sd.hidden=true;sd.onclick=e=>{if(e.target===sd)sd.hidden=true};
 window.openSearch=()=>{sd.hidden=false;IDX=null;run();setTimeout(()=>inp.focus(),50)};
 /* ---------- 📷 scan a product code (barcode or printed number) with the camera ---------- */
 {const TJ="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/",ZX="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
@@ -2260,13 +2260,138 @@ window.openShowcase=scOpen;
 {const r=document.querySelector("#houseView .hvbar .row");if(r){const b=document.createElement("button");b.className="btn";b.type="button";b.textContent="اعرض تصميمي 3D";b.onclick=scOpen;r.prepend(b)}}
 }
 
+/* ---------- favourites, compare two products, same design in other sizes, deep zoom, share-design link ---------- */
+{
+const css=document.createElement("style");css.textContent=`.fbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}.fbar button{font:500 12.5px var(--body);color:var(--fg);background:var(--solid);border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer;min-height:34px}
+.fbar button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.osz{margin:8px 0 0;font-size:12px;color:var(--muted)}.osz .chips{margin-top:5px}.osz .chips button{min-height:30px}
+#cmpPill{position:absolute;bottom:10px;inset-inline:12px;z-index:3;display:flex;gap:8px;align-items:center;justify-content:space-between;background:#1d2329;color:#fff;border-radius:12px;padding:8px 12px;font:500 13px var(--body);box-shadow:0 6px 20px rgba(0,0,0,.25)}#cmpPill[hidden]{display:none}
+#cmpPill button{font:600 12.5px var(--body);border:0;border-radius:999px;padding:6px 12px;cursor:pointer;background:#fff;color:#111}#cmpPill .cx{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
+.fdlg{position:fixed;inset:0;z-index:79;background:rgba(10,12,16,.6);display:flex;align-items:flex-start;justify-content:center;padding:5vh 10px 10px}.fdlg[hidden]{display:none}
+.fdlg .fbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--solid);color:var(--fg);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fdlg .fh{display:flex;justify-content:space-between;align-items:center;gap:8px}.fdlg h3{margin:0;font:600 18px var(--display)}.fdlg .fx{border:1px solid var(--line);background:none;color:inherit;border-radius:8px;padding:2px 11px;font-size:18px;cursor:pointer}
+.favl{display:flex;flex-direction:column;gap:6px}.favl .fi{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px}
+.favl img{width:56px;height:56px;object-fit:cover;background:#fff;border-radius:6px;flex:none}.favl .ft{flex:1;min-width:0;text-align:start;background:none;border:0;color:inherit;cursor:pointer;font:inherit;padding:0}.favl b{display:block;font-size:13.5px;unicode-bidi:plaintext}.favl small{color:var(--muted);font-size:11.5px}
+.favl .fr{border:1px solid var(--line);background:none;color:inherit;border-radius:8px;padding:6px 10px;cursor:pointer}
+.cmpg{display:grid;grid-template-columns:minmax(64px,auto) 1fr 1fr;gap:0;font-size:13px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cmpg>div{padding:7px 9px;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere;unicode-bidi:plaintext}.cmpg .k{color:var(--muted);background:var(--accent-soft)}.cmpg .df{background:rgba(255,196,0,.16);font-weight:600}
+.cmpg .hd{text-align:center}.cmpg .hd img{width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:6px}.cmpg .hd b{display:block;margin-top:4px}.cmpg .hd small{color:var(--muted)}
+.cmpv{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cmpv div{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px}.cmpv h4{margin:0 0 6px;font-size:13.5px;unicode-bidi:plaintext}.cmpv ul{margin:0;padding-inline-start:18px;line-height:1.7}.cmpv button{margin-top:8px}
+@media (max-width:520px){.cmpv{grid-template-columns:1fr}}
+.shrow{display:flex;gap:8px;flex-wrap:wrap}.shrow input{flex:1 1 220px;min-width:0;font-size:14px;padding:9px 10px;direction:ltr}
+#lightbox img{touch-action:none;transition:transform .12s;cursor:zoom-in;user-select:none;-webkit-user-drag:none}#lightbox.zin img{cursor:grab;transition:none}
+#lbTip{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font:500 12.5px var(--body);padding:5px 12px;border-radius:999px;pointer-events:none;white-space:nowrap}
+#lbX{position:absolute;top:10px;right:12px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;color:#111;font-size:22px;cursor:pointer;z-index:6}`;document.head.appendChild(css);
+const $id=id=>document.getElementById(id),info=$id("info"),IDXF=()=>{try{return window.__idx()}catch(e){return[]}};
+const byCode=c=>IDXF().find(x=>String(x.code)===String(c));
+const dlg=(id,title)=>{let d=$id(id);if(!d){d=document.createElement("div");d.id=id;d.className="fdlg";d.hidden=true;d.innerHTML=`<div class="fbox" role="dialog" aria-label="${title}"><div class="fh"><h3>${title}</h3><button type="button" class="fx" aria-label="إغلاق">×</button></div><div class="fb"></div></div>`;document.body.appendChild(d);d.querySelector(".fx").onclick=()=>d.hidden=true;d.addEventListener("click",e=>{if(e.target===d)d.hidden=true})}return d};
+const chip=(id,txt,fn)=>{const b=document.createElement("button");b.className="homebtn stchip";b.type="button";b.id=id;b.textContent=txt;b.style.cssText="right:auto;left:12px";b.onclick=fn;document.querySelector(".stagewrap").appendChild(b);return b};
+
+/* ---- favourites (kept on this device) ---- */
+let FAV=[];try{FAV=JSON.parse(localStorage.getItem("scc-fav")||"[]")}catch(e){}
+const favSave=()=>{try{localStorage.setItem("scc-fav",JSON.stringify(FAV))}catch(e){}favBtn.textContent="❤ المفضلة"+(FAV.length?" ("+FAV.length+")":"")};
+const isFav=c=>FAV.some(f=>f.code===c);
+function openFav(){const d=dlg("favDlg","❤ المفضلة"),b=d.querySelector(".fb");
+  b.innerHTML=FAV.length?`<div class="favl">${FAV.map((f,i)=>`<div class="fi"><img alt="" src="${f.img||""}"><button type="button" class="ft" data-i="${i}"><b>${esc(f.name)}</b><small dir="ltr">${esc(f.code)}</small></button><button type="button" class="fr" data-r="${i}" aria-label="حذف من المفضلة">×</button></div>`).join("")}</div><p class="fine">اضغط على المنتج لعرضه على البيت. المفضلة محفوظة على هذا الجهاز.</p>`:`<p>ما فيه منتجات بالمفضلة. اضغط ❤ تحت أي منتج لحفظه هنا.</p>`;
+  b.querySelectorAll(".ft").forEach(x=>x.onclick=()=>{const f=FAV[+x.dataset.i],it=byCode(f.code);d.hidden=true;if(it)window.__open(it);else say("المنتج غير متوفر حالياً")});
+  b.querySelectorAll(".fr").forEach(x=>x.onclick=()=>{FAV.splice(+x.dataset.r,1);favSave();openFav();deco()});d.hidden=false}
+const favBtn=chip("favBtn","❤ المفضلة",()=>{try{track("فتح المفضلة")}catch(e){}openFav()});favSave();
+
+/* ---- compare two products ---- */
+let CMP=[];const pill=document.createElement("div");pill.id="cmpPill";pill.hidden=true;document.querySelector(".side").style.position="relative";document.querySelector(".side").appendChild(pill);
+const drawPill=()=>{pill.hidden=!CMP.length;if(!CMP.length)return;pill.innerHTML=`<span>⚖ المقارنة: ${CMP.length} من 2${CMP.length<2?" · اختر منتج ثاني":""}</span><span style="display:flex;gap:6px">${CMP.length===2?`<button type="button" class="go">قارن</button>`:""}<button type="button" class="cx">إلغاء</button></span>`;
+  pill.querySelector(".cx").onclick=()=>{CMP=[];drawPill();deco()};const g=pill.querySelector(".go");if(g)g.onclick=openCmp};
+const tileOf=c=>TILES.find(t=>String(t.code)===String(c));
+function verdict(a,b){const out=[[],[]],A=a.tile,B=b.tile;if(!A||!B)return null;const add=(i,t)=>out[i].push(t);
+  if(A.cat!==B.cat){add(A.cat==="بورسلان"?0:1,"بورسلان: امتصاص ماء أقل وتحمّل أعلى، يناسب الأرضيات والأماكن الخارجية");add(A.cat==="بورسلان"?1:0,"سيراميك: خيار اقتصادي مناسب للجدران والاستخدام الداخلي")}
+  if(+A.t!==+B.t)add(+A.t>+B.t?0:1,`أسمك (${Math.max(+A.t,+B.t)} سم): تحمّل أعلى للأحمال`);
+  const ar=t=>+t.w*+t.h;if(ar(A)!==ar(B)){add(ar(A)>ar(B)?0:1,"مقاس أكبر: فواصل أقل ومظهر أوسع للمكان");add(ar(A)>ar(B)?1:0,"مقاس أصغر: أسهل بالقص والتركيب في المساحات الصغيرة")}
+  const pol=t=>/polish|lapp/i.test(t.finish||"")&&!/^matt$/i.test(t.finish||""),pa=pol(A),pb=pol(B);
+  if(pa!==pb){add(pa?0:1,"تشطيب لامع: لمعة أعلى وتنظيف أسهل");add(pa?1:0,"تشطيب مطفي: أقل انزلاقاً، أنسب للأماكن المبللة")}
+  const z=t=>(t.zones||[]).length;if(z(A)!==z(B))add(z(A)>z(B)?0:1,"استخدامات أكثر (أرضيات وجدران)");return out}
+function openCmp(){if(CMP.length<2)return;const [a,b]=CMP,d=dlg("cmpDlg","⚖ مقارنة بين منتجين"),box=d.querySelector(".fb");
+  const keys=[];[a,b].forEach(p=>p.rows.forEach(r=>{if(!keys.includes(r[0]))keys.push(r[0])}));const val=(p,k)=>{const r=p.rows.find(r=>r[0]===k);return r?r[1]:"—"};
+  const v=verdict(a,b);let nd=0;
+  const rows=keys.map(k=>{const x=val(a,k),y=val(b,k),df=String(x).trim()!==String(y).trim();if(df)nd++;return`<div class="k">${esc(k)}</div><div class="${df?"df":""}">${esc(x)}</div><div class="${df?"df":""}">${esc(y)}</div>`}).join("");
+  box.innerHTML=`<div class="cmpg"><div class="k"></div>${[a,b].map(p=>`<div class="hd">${p.img?`<img alt="" src="${p.img}">`:""}<b>${esc(p.name)}</b><small dir="ltr">${esc(p.code)}</small></div>`).join("")}${rows}</div>
+   <p class="fine">الخانات المظللة هي الفروقات بين المنتجين (${nd}).</p>
+   ${v?`<div class="cmpv">${[a,b].map((p,i)=>`<div><h4>مميزات ${esc(p.name)} (${esc(p.size||"")})</h4>${v[i].length?`<ul>${v[i].map(t=>`<li>${t}</li>`).join("")}</ul>`:`<p class="fine" style="margin:0">نفس مواصفات المنتج الثاني في البنود الأساسية.</p>`}<button type="button" class="btn ghost sm" data-t="${i}">جرّبه على البيت</button></div>`).join("")}</div><p class="fine">المميزات إرشادية عامة حسب النوع والمقاس والتشطيب، والقيم المعتمدة في ورقة المواصفات.</p>`
+     :`<div class="cmpv">${[a,b].map((p,i)=>`<div><h4>${esc(p.name)}</h4><button type="button" class="btn ghost sm" data-t="${i}">اعرضه على البيت</button></div>`).join("")}</div>`}`;
+  box.querySelectorAll("[data-t]").forEach(x=>x.onclick=()=>{const it=byCode(CMP[+x.dataset.t].code);d.hidden=true;if(it)window.__open(it)});
+  d.hidden=false;try{track("مقارنة: "+a.code+" × "+b.code)}catch(e){}}
+
+/* ---- decorate every product card: ❤ / ⚖ / 🔍 + same design in other sizes ---- */
+const nkey=t=>String(t.name||"").toLowerCase().replace(/\s+/g," ").trim();
+function read(sp){const code=(sp.querySelector(".code")||{}).textContent||"",h=sp.querySelector("h3"),ph=sp.querySelector("img.photo"),t=tileOf(code.trim());
+  const rows=[...sp.querySelectorAll("dl dt")].map(dt=>[dt.textContent.trim(),(dt.nextElementSibling||{}).textContent||""]);
+  return{code:code.trim(),name:h?h.textContent.trim():code,img:t?t.thumb:(ph&&ph.src)||"",rows,tile:t||null,size:t?`${+t.w}×${+t.h}`:""}}
+function deco(){info.querySelectorAll(".spec").forEach(sp=>{const cd=sp.querySelector(".code");if(!cd||!cd.textContent.trim())return;let bar=sp.querySelector(".fbar");const p=read(sp);
+  if(!bar){bar=document.createElement("div");bar.className="fbar";bar.innerHTML=`<button type="button" data-a="fav"></button><button type="button" data-a="cmp"></button>${sp.querySelector(".photo")?`<button type="button" data-a="zoom">🔍 تكبير الصورة</button>`:""}`;(sp.querySelector(".tsize")||cd).after(bar);
+    bar.onclick=e=>{const a=(e.target.closest("button")||{dataset:{}}).dataset.a,q=read(sp);if(!a)return;
+      if(a==="fav"){const i=FAV.findIndex(f=>f.code===q.code);if(i>=0)FAV.splice(i,1);else{FAV.push({code:q.code,name:q.name,img:q.img});try{track("مفضلة: "+q.code)}catch(e){}}favSave();deco()}
+      if(a==="cmp"){const i=CMP.findIndex(f=>f.code===q.code);if(i>=0)CMP.splice(i,1);else{if(CMP.length===2)CMP.shift();CMP.push(q)}drawPill();deco();if(CMP.length===2&&i<0)openCmp()}
+      if(a==="zoom"){const ph=sp.querySelector(".photo");ph&&ph.click()}};
+    const t=p.tile;if(t&&!sp.querySelector(".osz")){const L=TILES.filter(o=>o!==t&&nkey(o)===nkey(t)&&(sizeKey(o)!==sizeKey(t)||o.t!==t.t));
+      if(L.length){const o=document.createElement("div");o.className="osz";o.innerHTML=`نفس التصميم متوفر بمقاسات أخرى:<div class="chips">${L.map((x,i)=>`<button type="button" data-o="${i}"><bdi dir="ltr">${+x.w}×${+x.h}</bdi> · ${x.t} سم${x.zones.includes("facade")?" · واجهات":""}</button>`).join("")}</div>`;bar.after(o);
+        o.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{const x=L[+b.dataset.o],z=tileZone;
+          if(z&&TZ[z]&&tileSel[z]===t&&[].concat(TZ[z].list||z).some(q=>x.zones.includes(q))){const s=zstate(z);s.size=null;s.th=null;s.boxes=null;applyTile(z,x)}else{const it=byCode(x.code);if(it)window.__open(it)}})}}}
+  const f=bar.querySelector("[data-a=fav]"),c=bar.querySelector("[data-a=cmp]"),on=isFav(p.code),ic=CMP.some(x=>x.code===p.code);
+  if(f.getAttribute("aria-pressed")!==String(on)){f.setAttribute("aria-pressed",on);f.textContent=on?"❤ بالمفضلة":"♡ أضف للمفضلة"}
+  if(c.getAttribute("aria-pressed")!==String(ic)){c.setAttribute("aria-pressed",ic);c.textContent=ic?"⚖ بالمقارنة ✓":"⚖ قارن"}})}
+let dT=0;new MutationObserver(()=>{clearTimeout(dT);dT=setTimeout(deco,60)}).observe(info,{childList:true,subtree:true});deco();
+
+/* ---- deep zoom in the photo viewer: wheel / pinch / tap to zoom, drag to move ---- */
+{let s=1,x=0,y=0,moved=false;const P=new Map();let d0=0,s0=1;
+const tip=document.createElement("div");tip.id="lbTip";tip.textContent="اضغط أو قرّب بإصبعين للتكبير · اسحب للتحريك";lightbox.appendChild(tip);
+const xb=document.createElement("button");xb.id="lbX";xb.type="button";xb.textContent="×";xb.setAttribute("aria-label","إغلاق");lightbox.appendChild(xb);xb.onclick=e=>{e.stopPropagation();lightbox.hidden=true};
+const put=()=>{s=Math.min(6,Math.max(1,s));if(s===1){x=0;y=0}lbImg.style.transform=`translate(${x}px,${y}px) scale(${s})`;lightbox.classList.toggle("zin",s>1)};
+const reset=()=>{s=1;put()};lbImg.addEventListener("load",reset);
+lbImg.addEventListener("click",e=>{e.stopPropagation();if(moved){moved=false;return}if(s>1)reset();else{const r=lbImg.getBoundingClientRect();s=3;x=(r.left+r.width/2-e.clientX)*2;y=(r.top+r.height/2-e.clientY)*2;put()}});
+lightbox.addEventListener("wheel",e=>{e.preventDefault();s*=e.deltaY<0?1.2:1/1.2;put()},{passive:false});
+lbImg.addEventListener("pointerdown",e=>{P.set(e.pointerId,e);try{lbImg.setPointerCapture(e.pointerId)}catch(_){}if(P.size===2){const [a,b]=[...P.values()];d0=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);s0=s}});
+lbImg.addEventListener("pointermove",e=>{const o=P.get(e.pointerId);if(!o)return;
+  if(P.size===1&&s>1){const dx=e.clientX-o.clientX,dy=e.clientY-o.clientY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;x+=dx;y+=dy;put()}
+  P.set(e.pointerId,e);if(P.size===2){const [a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(d0){s=s0*d/d0;moved=true;put()}}});
+const up=e=>{P.delete(e.pointerId);if(P.size<2)d0=0};lbImg.addEventListener("pointerup",up);lbImg.addEventListener("pointercancel",up)}
+
+/* ---- share the design as a link ---- */
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""),
+ dec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/-/g,"+").replace(/_/g,"/")))));
+const B0={};try{Object.keys(bathSel).forEach(k=>{if(bathSel[k])B0[k]=bathSel[k].code})}catch(e){}
+function snapshot(){const o={t:{},b:{},c:[]};Object.keys(tileSel).forEach(z=>{if(tileSel[z])o.t[z]=tileSel[z].code});
+  try{Object.keys(bathSel).forEach(k=>{const p=bathSel[k];if(p&&p.code&&k!=="bathing"&&B0[k]!==p.code)o.b[k]=p.code})}catch(e){}
+  cart.forEach(i=>o.c.push([i.code,i.qty,i.tz||"",i.zone||"",i.sp||""]));return o}
+function openShare(){const st=snapshot();if(!Object.keys(st.t).length&&!st.c.length){say("اختر بلاط أو منتجات أول، وبعدها شارك تصميمك");return}
+  const url=location.origin+location.pathname+"#s="+enc(st),d=dlg("shDlg","🔗 مشاركة التصميم"),b=d.querySelector(".fb"),txt="شوف تصميم بيتي من الخزف السعودي 🏡\n"+url;
+  b.innerHTML=`<p style="margin:0">أي شخص يفتح الرابط يشوف نفس اختياراتك: البلاط المركّب على البيت والمنتجات والكميات بالسلة.</p><div class="shrow"><input readonly value="${esc(url)}" aria-label="رابط التصميم"><button type="button" class="btn" id="shCopy">نسخ الرابط</button></div>
+   <div class="shrow"><a class="btn" id="shWa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}" style="text-decoration:none">إرسال بالواتساب</a>${navigator.share?`<button type="button" class="btn ghost" id="shNat">مشاركة…</button>`:""}</div><p class="fine" id="shMsg" aria-live="polite"></p>`;
+  b.querySelector("#shCopy").onclick=async()=>{const i=b.querySelector("input");try{await navigator.clipboard.writeText(url)}catch(e){i.select();try{document.execCommand("copy")}catch(_){}}b.querySelector("#shMsg").textContent="تم نسخ الرابط ✓"};
+  const n=b.querySelector("#shNat");if(n)n.onclick=()=>navigator.share({title:"تصميم بيتي · الخزف السعودي",text:"شوف تصميم بيتي من الخزف السعودي 🏡",url}).catch(()=>{});
+  d.hidden=false;try{track("مشاركة التصميم")}catch(e){}}
+chip("shareBtn","🔗 مشاركة التصميم",openShare);
+async function restore(st){let n=0;
+  try{Object.keys(st.b||{}).forEach(k=>{const p=CAT.find(c=>String(c.code)===String(st.b[k]));if(p&&build[k]){bathSel[k]=p;try{build[k](p)}catch(e){}}})}catch(e){}
+  for(const z of Object.keys(st.t||{})){const t=tileOf(st.t[z]);if(t&&TZ[z]){try{await applyTile(z,t);n++}catch(e){}}}
+  (st.c||[]).forEach(([code,qty,tz,zone,sp])=>{if(cart.some(i=>i.code===code&&(i.sp||"")===(sp||"")))return;const t=tileOf(code);let it=null;
+    if(t)it={code:t.code,name:t.name,color:"",thumb:t.thumb,tile:t,zone:zone||"تصميم مشارك",tz:tz||undefined,qty,unit:"كرتون",sqmPer:parseFloat(t.pack.sqm)||0,spec:tileSpec(t)};
+    else{const x=byCode(code);if(x&&x.k==="cat")it=catItem(x.o,qty,zone||"تصميم مشارك");
+      else if(x&&x.k==="bathing"){const m=x.o,v=x.v;it={code:v.code,name:v.name,color:"أبيض",thumb:m.img,photo:m.photo,sheet:"b"+m.id,dim:m.dim||null,zone:zone||"تصميم مشارك",qty,unit:"قطعة",spec:[["المقاس",v.label]].concat(m.spec)}}}
+    if(it){if(sp)it.sp=sp;cart.push(it);n++}});
+  try{renderCart()}catch(e){}const zs=Object.keys(st.t||{});
+  try{if(zs.length&&!zs.some(z=>["facade","court","roof","pool"].includes(z)))select(zs.some(z=>/^l/.test(z))?"living":"bath")}catch(e){}
+  if(n){say("تم فتح التصميم المشارك ✓");try{track("فتح تصميم مشارك")}catch(e){}}}
+{const m=/[#&]s=([\w-]+)/.exec(location.hash);if(m){let st=null;try{st=dec(m[1])}catch(e){}
+  if(st){let k=0;const w=setInterval(()=>{if(TILES.length>50||++k>60){clearInterval(w);restore(st).catch(()=>{});try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}}},400)}}}
+window.__feat={snapshot,restore,enc,dec};
+}
+
 paint();
 })();
 </script>
 
 <script>/* ---------- language switch (Arabic / English): translates the interface text in place, the visitor's choice is remembered ---------- */
 (function(){
-const D={"داتا شيت بورسلان 60×120":"Datasheet porcelain 60×120","تفضل، هذي الداتا شيت:":"Here is the datasheet:","👁 عرض":"👁 View","حدد لي المقاس (مثل: داتا شيت بورسلان 60×120) أو اسم المنتج أو الكود، وأطلع لك الداتا شيت.":"Tell me the size (e.g. datasheet porcelain 60×120), the product name or its code, and I will show you the datasheet.","فريق المبيعات الخارجية ·":"Outdoor Sales Team","فريق المبيعات الخارجية · Outdoor Team": "Outdoor Sales Team", "المغاسل": "Washbasins", "الكراسي": "WCs", "خلاطات المغسلة": "Basin mixers", "الشطافات": "Shattafs", "المرايا": "Mirrors", "الصفايات": "Floor drains", "الدش": "Shower", "البانيو": "Bathtub", "السخان": "Heater", "فاتح": "light", "رمادي فاتح": "light grey", "دولاب مع مغسلة": "Vanity with basin", "هلا فيك 👋 أنا مساعد الخزف السعودي.\nاكتب لي وش تحتاج بالمواصفات (النوع، المقاس، السماكة، اللون، مطفي أو لامع، مكان الاستخدام)، أو اطلب فكرة تصميم دورة مياه بلون معيّن، وأنا أطلع لك الخيارات المناسبة.": "Hi 👋 I'm the Saudi Ceramics assistant.\nTell me what you need with its specs (type, size, thickness, colour, matt or polished, where it's used), or ask for a bathroom design idea in a certain colour, and I'll show you suitable options.", "ما فهمت طلبك تمامًا 🙂 اكتب نوع المنتج ومواصفاته، مثل:\n• بلاط بورسلان 60×120 مطفي بيج للأرضيات\n• مغسلة بدولاب 80 سم\n• دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح\n• سخان 50 لتر\n• أو اكتب كود المنتج": "I didn't fully understand 🙂 Type the product type and specs, e.g.:\n• Porcelain 60×120 matt beige for floors\n• Vanity 80 cm\n• Bathroom with matt black fixtures and light marble tiles\n• Water heater 50 L\n• Or type a product code",
+const D={"الكمية (م²)":"Quantity (m²)","♡ أضف للمفضلة":"♡ Add to favourites","❤ بالمفضلة":"❤ In favourites","⚖ قارن":"⚖ Compare","⚖ بالمقارنة ✓":"⚖ In compare ✓","🔍 تكبير الصورة":"🔍 Zoom photo","🔗 مشاركة التصميم":"🔗 Share design","❤ المفضلة":"❤ Favourites","نسخ الرابط":"Copy link","إرسال بالواتساب":"Send by WhatsApp","قارن":"Compare","إلغاء":"Cancel","جرّبه على البيت":"Try it on the house","نفس التصميم متوفر بمقاسات أخرى:":"Same design in other sizes:","⚖ مقارنة بين منتجين":"⚖ Compare two products","داتا شيت بورسلان 60×120":"Datasheet porcelain 60×120","تفضل، هذي الداتا شيت:":"Here is the datasheet:","👁 عرض":"👁 View","حدد لي المقاس (مثل: داتا شيت بورسلان 60×120) أو اسم المنتج أو الكود، وأطلع لك الداتا شيت.":"Tell me the size (e.g. datasheet porcelain 60×120), the product name or its code, and I will show you the datasheet.","فريق المبيعات الخارجية ·":"Outdoor Sales Team","فريق المبيعات الخارجية · Outdoor Team": "Outdoor Sales Team", "المغاسل": "Washbasins", "الكراسي": "WCs", "خلاطات المغسلة": "Basin mixers", "الشطافات": "Shattafs", "المرايا": "Mirrors", "الصفايات": "Floor drains", "الدش": "Shower", "البانيو": "Bathtub", "السخان": "Heater", "فاتح": "light", "رمادي فاتح": "light grey", "دولاب مع مغسلة": "Vanity with basin", "هلا فيك 👋 أنا مساعد الخزف السعودي.\nاكتب لي وش تحتاج بالمواصفات (النوع، المقاس، السماكة، اللون، مطفي أو لامع، مكان الاستخدام)، أو اطلب فكرة تصميم دورة مياه بلون معيّن، وأنا أطلع لك الخيارات المناسبة.": "Hi 👋 I'm the Saudi Ceramics assistant.\nTell me what you need with its specs (type, size, thickness, colour, matt or polished, where it's used), or ask for a bathroom design idea in a certain colour, and I'll show you suitable options.", "ما فهمت طلبك تمامًا 🙂 اكتب نوع المنتج ومواصفاته، مثل:\n• بلاط بورسلان 60×120 مطفي بيج للأرضيات\n• مغسلة بدولاب 80 سم\n• دورة مياه بأدوات سوداء مطفي وبلاط رخامي فاتح\n• سخان 50 لتر\n• أو اكتب كود المنتج": "I didn't fully understand 🙂 Type the product type and specs, e.g.:\n• Porcelain 60×120 matt beige for floors\n• Vanity 80 cm\n• Bathroom with matt black fixtures and light marble tiles\n• Water heater 50 L\n• Or type a product code",
 "شطّب بيتك وأنت مرتاح مع الخزف السعودي":"Finish Your Home with Ease — Saudi Ceramics","شطّب بيتك وأنت مرتاح مع الخزف السعودي · فريق المبيعات الخارجية":"Finish Your Home with Ease — Saudi Ceramics · Outdoor Sales Team","شطّب بيتك وأنت مرتاح":"Finish your home with ease","فريق المبيعات الخارجية":"Outdoor Sales Team","الخزف السعودي":"Saudi Ceramics","بكل فخر صناعة سعودية":"Proudly Saudi Made","صناعة سعودية":"Saudi Made",
 "اختر منتجاتك على بيتك ثلاثي الأبعاد، واحصل على كتالوج بالمنتجات والكميات. نبدأ ببياناتك عشان نجهز الكتالوج باسمك":"Choose your products on your 3D home and get a catalog with products and quantities. Start with your details so we can prepare the catalog in your name","الاسم":"Name","رقم الجوال":"Mobile number","الجوال":"Mobile","ابدأ التصميم":"Start designing","مثال: محمد العتيبي":"e.g. Mohammed Alotaibi","اكتب اسمك عشان نجهز الكتالوج باسمك":"Enter your name so we can prepare the catalog in your name","رقم الجوال لازم يكون 10 أرقام ويبدأ بـ 05، مثل":"Mobile number must be 10 digits starting with 05, e.g.",
 "السلة":"Cart","شوف بيتك":"See your home","البيت كامل":"Whole house","بلاط داخلي":"Indoor tiles","بلاط خارجي":"Outdoor tiles","بلاط مسابح":"Pool tiles","بلاط أسطح":"Roof tiles","بلاط الدرج":"Stair tiles","الأدوات الصحية":"Sanitary ware","السخانات":"Water heaters","بعد التشطيب":"After finishing","شكل العظم":"Shell view","عرض تصميمي":"Design show","تصدير كتالوج":"Export catalog","بحث عن منتج":"Search products","المساعد الذكي":"Smart assistant",
@@ -2318,7 +2443,7 @@ window.setLang=set;
 </script>
 <script>/* layout v3: gather the stage tool chips into one bar */
 (function(){function go(){var w=document.querySelector(".stagewrap");if(!w||w.querySelector(".tools"))return;var t=document.createElement("div");t.className="tools";
-["aiBtn","srchBtn","scChip","finBtn","pickBtn","hdBtn"].forEach(function(id){var b=document.getElementById(id);if(b&&b.parentNode===w)t.appendChild(b)});
+["aiBtn","srchBtn","scChip","favBtn","shareBtn","finBtn","pickBtn","hdBtn"].forEach(function(id){var b=document.getElementById(id);if(b&&b.parentNode===w)t.appendChild(b)});
 if(t.children.length)w.appendChild(t)}
 if(document.readyState==="complete")setTimeout(go,0);else window.addEventListener("load",function(){setTimeout(go,0)})})();</script>
 </body></html>
