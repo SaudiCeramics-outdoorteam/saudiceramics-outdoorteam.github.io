@@ -962,7 +962,7 @@ Object.assign(build,{
     if(p.line==="smart"){bMesh(extFront(rrect(.1,.07,.012),.006,0).rotateY(Math.PI/2),SM({color:0x101215,emissive:0x2e8bd9,emissiveIntensity:.45}),x+2*r+.046,y0+h*.6,z,"heater",g)}
     [-.1,.1].forEach(dz=>bMesh(cyl(.012,.12),finish("#d9dde1"),x+r+.04,y0-.06,z+dz,"heater",g))},
   bathing(model,vi){const g=G.bathing;clear(g);const v=model.variants[vi||0],[L,W]=v.size;
-    const acr=glossy("#f8f8f5",.12),chrome=finish("#d9dde1"),inside=new THREE.MeshStandardMaterial({color:0xdfe4e3,roughness:.12,side:THREE.BackSide,envMap:envTex,envMapIntensity:.8});
+    const blk=/black|أسود/i.test(v.name+" "+(model.title||"")),acr=blk?new THREE.MeshStandardMaterial({color:0x1a1a1c,roughness:.55,envMap:envTex,envMapIntensity:.25}):glossy("#f8f8f5",.12),chrome=finish("#d9dde1"),inside=new THREE.MeshStandardMaterial({color:blk?0x222224:0xdfe4e3,roughness:blk?.5:.12,side:THREE.BackSide,envMap:envTex,envMapIntensity:.8});
     if(model.kind==="free"){ // ROMA: slipper-style freestanding oval
       const prof=[[0,0],[.28,0],[.3,.04],[.36,.3],[.42,.58],[.425,.62],[.405,.625],[.37,.4],[.31,.16],[.26,.11],[0,.11]];
       const t=bMesh(lathe(prof,64),acr,1.6-L/2-.06,0,Z0+W/2+.12,"bathing",g);t.scale.set(L/.85,1,W/.85);showerX=1.25}
@@ -1053,7 +1053,7 @@ function renderBathing(bc,bp,bs){
    <div class="row"><button class="btn" id="bAdd">${had&&had.code===v.code?"بالسلة ✓":had?"استبدل بالسلة":"أضف للسلة"}</button><button class="btn ghost" type="button" id="bSheet">ورقة المواصفات</button></div>`;
   const vs=document.getElementById("vSel");if(vs)vs.onchange=()=>{bathVar[cur.id]=+vs.value;build.bathing(cur,+vs.value);renderBath()};
   document.getElementById("bAdd").onclick=()=>{cart.filter(i=>i.bcat==="bathing"&&i.sp===spaceName("bath")).forEach(i=>cart.splice(cart.indexOf(i),1));
-    putCart({code:v.code,name:v.name,color:"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,dim:cur.dim||null,zone:"دورة المياه",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
+    putCart({code:v.code,name:v.name,color:/black|أسود/i.test(v.name)?"أسود مطفي":"أبيض",thumb:cur.img,photo:cur.photo,sheet:"b"+cur.id,dim:cur.dim||null,zone:"دورة المياه",qty:1,unit:"قطعة",spec:[["المقاس",v.label]].concat(cur.spec),bcat:"bathing"});renderBath()};
   document.getElementById("bSheet").onclick=()=>zoom(SHEETS["b"+cur.id],cur.title);
   bs.querySelector(".photo").onclick=()=>zoom(cur.photo,cur.title);
 }
@@ -1122,7 +1122,7 @@ function tileSpec(t){const p=t.pack||{},num=v=>String(v||"").replace(/,/g,"");re
   ...(t.src!=="cer"?[["الحواف","مشطوفة (Rectified)"]]:[]),["الاستخدام",t.app],...(t.faces?[["عدد الوجوه",t.faces]]:[]),
   ["قطع بالكرتون",p.pcs],["م² بالكرتون",p.sqm],["كغ بالكرتون",num(p.kg)],["كرتون بالطبلية",p.bpp],["م² بالطبلية",p.sqmp],["كغ بالطبلية",num(p.kgp)]].filter(r=>r[1])}
 /* official datasheets supplied by Saudi Ceramics, keyed by type|size|thickness (one sheet covers every design of that spec) */
-const dsKey=t=>`${t.src}|${Math.min(+t.w,+t.h)}x${Math.max(+t.w,+t.h)}|${(+t.t).toFixed(1)}`;
+const dsKey=t=>`${t.src==="fac"?"por":t.src}|${Math.min(+t.w,+t.h)}x${Math.max(+t.w,+t.h)}|${(+t.t).toFixed(1)}`;
 async function officialDS(t){try{const d=await getChunk("ds_0");return d[dsKey(t)]||null}catch(e){return null}}
 const tpURL=t=>`data/tp/${t.tpf||t.src+"_"+t.page}.jpg`;
 const tSize=t=>`${+t.w}×${+t.h}`,tSizeFull=t=>`المقاس ${+t.w}×${+t.h} سم · السماكة ${t.t} سم`;
