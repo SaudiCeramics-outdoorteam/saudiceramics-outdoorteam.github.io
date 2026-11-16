@@ -255,6 +255,8 @@ header.top{position:relative;inset:auto;display:flex;align-items:center;justify-
 .bsub{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}.bsub[hidden]{display:none}.bsub button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer}.bsub button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* layout v3: tool chips in one bar (never cover the villa on phones), compact phone header, wrapped tabs on wide screens, touch sizes */
+.titles h1{font-family:var(--body);font-weight:700;letter-spacing:0}
+.hl2{display:inline-flex!important;direction:ltr;align-items:center;perspective:420px;width:auto}.hl2 img{display:block;height:100%;width:auto}.hmark{animation:hspin 3.2s linear infinite}@keyframes hspin{to{transform:rotateY(360deg)}}@media (prefers-reduced-motion:reduce){.hmark{animation:none}}
 .tools{position:absolute;top:12px;left:12px;z-index:2;display:flex;flex-direction:column;align-items:stretch;gap:8px;pointer-events:none}
 .tools>*{pointer-events:auto}
 .tools .homebtn{position:static!important;white-space:nowrap}
@@ -309,7 +311,7 @@ const t0=Date.now(),min=matchMedia("(prefers-reduced-motion: reduce)").matches?6
 
 <div id="app">
   <header class="top">
-    <div class="brandbox"><img class="hlogo" src="img/logo.png" alt="الخزف السعودي">
+    <div class="brandbox"><span class="hlogo hl2" role="img" aria-label="الخزف السعودي"><img src="img/logo-word.png" alt=""><img class="hmark" src="img/logo-mark.png" alt=""></span>
       <div class="titles"><h1>شطّب بيتك وأنت مرتاح مع الخزف السعودي</h1><p class="team">فريق المبيعات الخارجية · <span dir="ltr">Outdoor Team</span></p></div></div>
     <div class="topact"><button id="whoBtn" class="who" type="button" hidden></button><button id="cartBtn" class="btn" aria-expanded="false" aria-controls="cart">السلة <b id="cartCount">0</b></button></div>
   </header>
