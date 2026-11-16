@@ -2292,33 +2292,36 @@ const css=document.createElement("style");css.textContent=`#ptDlg{position:fixed
 #ptDlg .pth{display:flex;justify-content:space-between;align-items:center;gap:8px}#ptDlg .pth b{font-size:17px}#ptDlg .pth small{opacity:.7;display:block;font-weight:400;font-size:12px}
 #ptDlg input{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid #c9c4b8;background:#fff;color:#111;width:100%;box-sizing:border-box}
 #ptDlg .ptf{display:flex;flex-wrap:wrap;gap:6px}#ptDlg .ptf button{font:inherit;font-size:13px;padding:6px 11px;border-radius:999px;border:1px solid #c9c4b8;background:transparent;color:inherit;cursor:pointer}#ptDlg .ptf button[aria-pressed=true]{background:var(--accent,#1f4e8c);border-color:var(--accent,#1f4e8c);color:#fff}
-#ptDlg .ptl{overflow:auto;display:flex;flex-direction:column;gap:6px;min-height:120px}
+#ptDlg .ptbox{overflow:hidden}#ptDlg #ptBody{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}#ptDlg .ptl{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;min-height:120px;padding-bottom:6px}#ptDlg .ptr{flex:none}
 #ptDlg .ptr{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:#fff;border:1px solid #e3ded2;border-radius:10px;padding:9px 11px;color:#111}
 #ptDlg .ptr .nm{font-weight:600;font-size:14px;direction:ltr;text-align:right}#ptDlg .ptr .cd{font-size:12.5px;color:#5b5648;direction:ltr;text-align:right}
 #ptDlg .bdg{font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;text-align:center}#ptDlg .bdg small{display:block;font-weight:400;font-size:11px}
-#ptDlg .s-done{background:#dff3e4;color:#1d6b35}#ptDlg .s-line{background:#fff1c9;color:#7a5600}#ptDlg .s-date{background:#dfeaf9;color:#1c478a}#ptDlg .s-past{background:#e6f1e9;color:#356b45}#ptDlg .s-plan{background:#ece8f7;color:#4b3a86}#ptDlg .s-none{background:#eee;color:#666}
+#ptDlg .ptg{flex:none;font-weight:700;font-size:14px;padding:10px 2px 2px;color:inherit}#ptDlg .ptg small{font-weight:400;opacity:.7}#ptDlg .s-today{background:#1f4e8c;color:#fff}#ptDlg .s-done{background:#dff3e4;color:#1d6b35}#ptDlg .s-line{background:#fff1c9;color:#7a5600}#ptDlg .s-date{background:#dfeaf9;color:#1c478a}#ptDlg .s-past{background:#e6f1e9;color:#356b45}#ptDlg .s-plan{background:#ece8f7;color:#4b3a86}#ptDlg .s-none{background:#eee;color:#666}
 #ptDlg .ptx{border:1px solid #c9c4b8;background:transparent;color:inherit;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:16px}#ptDlg .ptn{font-size:12.5px;opacity:.75}#ptDlg .pin{display:flex;flex-direction:column;gap:10px;align-items:stretch;padding:8px 0}#ptDlg .pin button{font:inherit;padding:11px;border-radius:10px;border:0;background:var(--accent,#1f4e8c);color:#fff;cursor:pointer}#ptDlg .err{color:#b3261e;font-size:13px;min-height:1.2em}`;document.head.appendChild(css);
 const dl=document.createElement("div");dl.id="ptDlg";dl.hidden=true;dl.innerHTML=`<div class="ptbox" role="dialog" aria-label="خطة الإنتاج"><div class="pth"><b>📦 مواعيد الإنتاج<small id="ptSub">للموظفين فقط</small></b><button type="button" class="ptx" aria-label="إغلاق">×</button></div><div id="ptBody"></div></div>`;document.body.appendChild(dl);
 const body=dl.querySelector("#ptBody"),E=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 dl.querySelector(".ptx").onclick=()=>dl.hidden=true;dl.addEventListener("click",e=>{if(e.target===dl)dl.hidden=true});
 const K=[["all","الكل"],["tile","البلاط"],["sw","الأدوات الصحية"],["ewh","السخانات"],["mix","الخلاطات والسيفون"],["tub","البانيو وأحواض القدم"]],
- S=[["all","كل الحالات"],["soon","على الخط والقادم"],["done","تم إنتاجه"],["none","بدون خطة"]];
+ S=[["all","كل الحالات"],["today","إنتاج اليوم"],["tmr","بكرة"],["soon","على الخط والقادم"],["done","تم إنتاجه"],["none","بدون خطة"]];
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const dfmt=s=>{const [y,m,d]=s.split("-");return (+d)+" "+["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"][m-1]};
-const stOf=o=>o.st==="date"?(o.d<today()?"past":"date"):o.st;
-const rank=o=>({line:0,date:1,plan:2,done:3,past:4,none:5})[stOf(o)];
+const tmr=()=>{const d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const onDay=(o,T)=>o.st==="date"&&(o.d===T||(o.f&&o.f<=T&&T<=o.d));
+const stOf=o=>o.st==="date"?(onDay(o,today())?"today":o.d<today()?"past":"date"):o.st;
+const rank=o=>({today:0,line:1,date:2,plan:3,done:4,past:5,none:6})[stOf(o)];
+const grp=o=>{const s=stOf(o);return s==="today"?"🔵 إنتاج اليوم · "+dfmt(today()):s==="line"?"🟡 على الخط (حسب آخر تحديث للخطة "+dfmt(DATA.updated)+")":s==="date"?(onDay(o,tmr())||(o.f||o.d)===tmr()?"📅 بكرة · ":"📅 ")+dfmt(o.f&&o.f>today()?o.f:o.d):s==="plan"?"🗓 خلال الشهر بدون تاريخ محدد":s==="done"?"🟢 تم إنتاجه":s==="past"?"✔ موعده مضى":"⚪ بدون خطة هذا الشهر"};
 const badge=o=>{const s=stOf(o),q=o.q?` <small>${Number(o.q).toLocaleString("en")} ${o.u}</small>`:"";
-  if(s==="done")return`<span class="bdg s-done">🟢 تم الإنتاج${q}</span>`;if(s==="line")return`<span class="bdg s-line">🟡 على الخط الآن${q}</span>`;
+  if(s==="today")return`<span class="bdg s-today">🔵 اليوم${o.f&&o.f!==o.d?" (حتى "+dfmt(o.d)+")":""}${q}</span>`;if(s==="done")return`<span class="bdg s-done">🟢 تم الإنتاج${q}</span>`;if(s==="line")return`<span class="bdg s-line">🟡 على الخط الآن${q}</span>`;
   if(s==="date")return`<span class="bdg s-date">📅 ${o.f&&o.f!==o.d?dfmt(o.f)+" – ":""}${dfmt(o.d)}${q}</span>`;if(s==="past")return`<span class="bdg s-past">✔ موعده ${dfmt(o.d)}${q}</span>`;
   if(s==="plan")return`<span class="bdg s-plan">🗓 خلال ${E(DATA.month)}${q}</span>`;return`<span class="bdg s-none">⚪ لا توجد خطة هذا الشهر</span>`};
 const norm=s=>String(s).toLowerCase().replace(/[ً-ْ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/\s+/g," ").trim();
 function list(){const q=norm(body.querySelector("#ptQ").value),qd=q.replace(/\D/g,"").replace(/^0+/,"");
-  let L=DATA.items.filter(o=>(cat==="all"||o.k===cat)&&(stf==="all"||(stf==="soon"?["line","date","plan"].includes(stOf(o)):stf==="done"?["done","past"].includes(stOf(o)):stOf(o)==="none")));
+  let L=DATA.items.filter(o=>(cat==="all"||o.k===cat)&&(stf==="all"||(stf==="today"?stOf(o)==="today":stf==="tmr"?(onDay(o,tmr())||o.f===tmr()):stf==="soon"?["today","line","date","plan"].includes(stOf(o)):stf==="done"?["done","past"].includes(stOf(o)):stOf(o)==="none")));
   if(q)L=L.filter(o=>(qd.length>=4&&o.c.includes(qd))||q.split(" ").every(w=>norm(o.n+" "+o.z).includes(w)));
-  L.sort((a,b)=>rank(a)-rank(b)||String(a.d||"").localeCompare(String(b.d||""))||a.n.localeCompare(b.n));
+  L.sort((a,b)=>rank(a)-rank(b)||String(a.f||a.d||"").localeCompare(String(b.f||b.d||""))||a.n.localeCompare(b.n));
   const box=body.querySelector(".ptl");body.querySelector(".ptn").textContent=L.length?`${L.length} صنف`:(q?"هذا الصنف غير موجود في خطة الإنتاج لهذا الشهر":"لا توجد أصناف");
-  box.innerHTML=L.slice(0,200).map(o=>`<div class="ptr"><div><div class="nm">${E(o.n)}</div><div class="cd">${E(o.c)}${o.z?" · "+E(o.z):""}${o.r?" · "+E(o.r):""}</div></div>${badge(o)}</div>`).join("")}
-function view(){dl.querySelector("#ptSub").textContent=`${DATA.month} · معارض التجزئة · آخر تحديث ${DATA.updated}`;
+  let gh="";box.innerHTML=L.slice(0,300).map(o=>{const g=grp(o),h=g!==gh?`<div class="ptg">${g} <small>(${L.filter(x=>grp(x)===g).length})</small></div>`:"";gh=g;return h+`<div class="ptr"><div><div class="nm">${E(o.n)}</div><div class="cd">${E(o.c)}${o.z?" · "+E(o.z):""}${o.r?" · "+E(o.r):""}</div></div>${badge(o)}</div>`}).join("")}
+function view(){dl.querySelector("#ptSub").textContent=`اليوم ${dfmt(today())} · خطة ${DATA.month} · معارض التجزئة · آخر تحديث للخطة ${dfmt(DATA.updated)}`;
   body.innerHTML=`<input id="ptQ" type="search" inputmode="search" placeholder="اكتب كود المنتج أو اسمه…" autocomplete="off"><div class="ptf" id="ptK" style="margin-top:8px"></div><div class="ptf" id="ptS" style="margin-top:6px"></div><div class="ptn" style="margin:8px 0 4px"></div><div class="ptl"></div>`;
   const chips=()=>{body.querySelector("#ptK").innerHTML=K.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===cat}">${l}</button>`).join("");body.querySelector("#ptS").innerHTML=S.map(([k,l])=>`<button type="button" data-s="${k}" aria-pressed="${k===stf}">${l}</button>`).join("");
     body.querySelectorAll("#ptK button").forEach(b=>b.onclick=()=>{cat=b.dataset.k;chips();list()});body.querySelectorAll("#ptS button").forEach(b=>b.onclick=()=>{stf=b.dataset.s;chips();list()})};
